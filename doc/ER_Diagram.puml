@@ -1,0 +1,268 @@
+@startuml DjangoBlog ER Diagram
+' ===============================
+' DjangoBlog 系统 E-R 图
+' 软件工程大作业 - 第4-5周
+' ===============================
+
+skinparam linetype ortho
+skinparam shadowing false
+skinparam roundcorner 10
+skinparam backgroundColor #FFFFFF
+
+skinparam class {
+    BackgroundColor<<核心实体>> #E3F2FD
+    BackgroundColor<<用户体系>> #FFF3E0
+    BackgroundColor<<评论互动>> #E8F5E9
+    BackgroundColor<<系统配置>> #F3E5F5
+    BackgroundColor<<运维管理>> #FCE4EC
+    ArrowColor #546E7A
+    BorderColor #455A64
+}
+
+hide circle
+hide empty members
+
+' =====================
+' 实体定义
+' =====================
+
+entity "BlogUser\n(用户)" as BlogUser <<用户体系>> {
+    * id : BigInt <<PK>>
+    --
+    * password : Varchar(128)
+    * last_login : DateTime
+    * is_superuser : Boolean
+    * username : Varchar(150) <<UK>>
+    * email : Varchar(254)
+    * is_staff : Boolean
+    * is_active : Boolean
+    * date_joined : DateTime
+    * nickname : Varchar(100)
+    * creation_time : DateTime
+    * last_modify_time : DateTime
+    * source : Varchar(100)
+}
+
+entity "Article\n(文章)" as Article <<核心实体>> {
+    * id : Int <<PK>>
+    --
+    * title : Varchar(200) <<UK>>
+    * body : MDTextField
+    * pub_time : DateTime
+    * status : Char(1) [d草稿/p发布]
+    * comment_status : Char(1) [o开/c关]
+    * type : Char(1) [a文章/p页面]
+    * views : PositiveInt
+    * article_order : Int
+    * show_toc : Boolean
+    * creation_time : DateTime
+    * last_modify_time : DateTime
+    ---
+    * author_id : BigInt <<FK>>
+    * category_id : Int <<FK>>
+}
+
+entity "Category\n(分类)" as Category <<核心实体>> {
+    * id : Int <<PK>>
+    --
+    * name : Varchar(30) <<UK>>
+    * slug : Varchar(60)
+    * index : Int
+    * creation_time : DateTime
+    * last_modify_time : DateTime
+    ---
+    parent_category_id : Int <<FK>> (自关联)
+}
+
+entity "Tag\n(标签)" as Tag <<核心实体>> {
+    * id : Int <<PK>>
+    --
+    * name : Varchar(30) <<UK>>
+    * slug : Varchar(60)
+    * creation_time : DateTime
+    * last_modify_time : DateTime
+}
+
+entity "Article_Tag\n(文章-标签 关联表)" as ArticleTag <<核心实体>> {
+    * article_id : Int <<FK,PK>>
+    * tag_id : Int <<FK,PK>>
+}
+
+entity "Comment\n(评论)" as Comment <<评论互动>> {
+    * id : BigInt <<PK>>
+    --
+    * body : Text(300)
+    * creation_time : DateTime
+    * last_modify_time : DateTime
+    * is_enable : Boolean
+    ---
+    * author_id : BigInt <<FK>>
+    * article_id : Int <<FK>>
+    parent_comment_id : BigInt <<FK>> (自关联)
+}
+
+entity "CommentReaction\n(评论反应)" as CommentReaction <<评论互动>> {
+    * id : BigInt <<PK>>
+    --
+    * reaction_type : Varchar(10) [👍👎❤️😄🎉😕🚀👀]
+    * created_at : DateTime
+    ---
+    * comment_id : BigInt <<FK>>
+    * user_id : BigInt <<FK>>
+    ===
+    唯一约束: (comment, user, reaction_type)
+}
+
+entity "OAuthUser\n(第三方用户)" as OAuthUser <<用户体系>> {
+    * id : BigInt <<PK>>
+    --
+    * openid : Varchar(50)
+    * nickname : Varchar(50)
+    token : Varchar(150)
+    picture : Varchar(350)
+    * type : Varchar(50) [weibo/google/github/facebook/qq]
+    email : Varchar(50)
+    metadata : Text
+    * creation_time : DateTime
+    * last_modify_time : DateTime
+    ---
+    author_id : BigInt <<FK>> (关联BlogUser, 可空)
+}
+
+entity "OAuthConfig\n(第三方配置)" as OAuthConfig <<用户体系>> {
+    * id : BigInt <<PK>>
+    --
+    * type : Varchar(10) <<UK>>
+    * appkey : Varchar(200)
+    * appsecret : Varchar(200)
+    * callback_url : Varchar(200)
+    * is_enable : Boolean
+    * creation_time : DateTime
+    * last_modify_time : DateTime
+}
+
+entity "Links\n(友情链接)" as Links <<核心实体>> {
+    * id : BigInt <<PK>>
+    --
+    * name : Varchar(30) <<UK>>
+    * link : URLField
+    * sequence : Int <<UK>>
+    * is_enable : Boolean
+    * show_type : Char(1) [i/l/p/a/s]
+    * creation_time : DateTime
+    * last_modify_time : DateTime
+}
+
+entity "SideBar\n(侧边栏)" as SideBar <<核心实体>> {
+    * id : BigInt <<PK>>
+    --
+    * name : Varchar(100)
+    * content : Text
+    * sequence : Int <<UK>>
+    * is_enable : Boolean
+    * creation_time : DateTime
+    * last_modify_time : DateTime
+}
+
+entity "BlogSettings\n(站点配置)" as BlogSettings <<系统配置>> {
+    * id : BigInt <<PK>>
+    --
+    * site_name : Varchar(200)
+    * site_description : Text(1000)
+    * site_seo_description : Text(1000)
+    * site_keywords : Text(1000)
+    * article_sub_length : Int
+    * sidebar_article_count : Int
+    * sidebar_comment_count : Int
+    * article_comment_count : Int
+    * show_google_adsense : Boolean
+    google_adsense_codes : Text(2000)
+    * open_site_comment : Boolean
+    * color_scheme : Varchar(20) [purple/blue/green/orange/pink/red/indigo/teal]
+    global_header : Text
+    global_footer : Text
+    beian_code : Varchar(2000)
+    * analytics_code : Text(1000)
+    * show_gongan_code : Boolean
+    gongan_beiancode : Text(2000)
+    * comment_need_review : Boolean
+    ===
+    业务约束: 只能有一条配置记录
+}
+
+entity "commands\n(机器人命令)" as commands <<运维管理>> {
+    * id : BigInt <<PK>>
+    --
+    * title : Varchar(300)
+    * command : Varchar(2000)
+    * describe : Varchar(300)
+    * creation_time : DateTime
+    * last_modify_time : DateTime
+}
+
+entity "EmailSendLog\n(邮件发送日志)" as EmailSendLog <<运维管理>> {
+    * id : BigInt <<PK>>
+    --
+    * emailto : Varchar(300)
+    * title : Varchar(2000)
+    * content : Text
+    * send_result : Boolean
+    * creation_time : DateTime
+}
+
+' =====================
+' 关系定义
+' =====================
+
+' ---- 用户与文章 (1:N) ----
+BlogUser ||--o{ Article : "撰写"
+Article }o--|| BlogUser : "作者"
+
+' ---- 文章与分类 (N:1) ----
+Article }o--|| Category : "属于"
+Category ||--o{ Article : "包含"
+
+' ---- 分类自关联 (树形) ----
+Category "0..1" ||--o{ Category : "父级"
+
+' ---- 文章与标签 (M:N) ----
+Article ||--o{ ArticleTag : ""
+Tag ||--o{ ArticleTag : ""
+ArticleTag }o--|| Article : "关联"
+ArticleTag }o--|| Tag : "关联"
+Article }o--o{ Tag : "多对多 标签"
+
+' ---- 用户与评论 (1:N) ----
+BlogUser ||--o{ Comment : "发表"
+Comment }o--|| BlogUser : "评论者"
+
+' ---- 文章与评论 (1:N) ----
+Article ||--o{ Comment : "拥有"
+Comment }o--|| Article : "所属文章"
+
+' ---- 评论自关联 (树形) ----
+Comment "0..1" ||--o{ Comment : "父评论 回复"
+
+' ---- 评论与反应 (1:N) ----
+Comment ||--o{ CommentReaction : "拥有"
+CommentReaction }o--|| Comment : "所属评论"
+
+' ---- 用户与反应 (1:N) ----
+BlogUser ||--o{ CommentReaction : "反应"
+CommentReaction }o--|| BlogUser : "用户"
+
+' ---- 用户与第三方账户 (1:N) ----
+BlogUser "0..1" ||--o{ OAuthUser : "绑定"
+OAuthUser }o--o| BlogUser : "关联用户"
+
+' ---- 第三方配置独立 ----
+OAuthConfig
+
+' ---- 独立实体 ----
+Links
+SideBar
+BlogSettings
+commands
+EmailSendLog
+
+@enduml
