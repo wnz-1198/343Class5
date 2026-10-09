@@ -1,0 +1,15 @@
+# DjangoBlog二次开发项目
+小组：XX组
+组员：XXX、XXX、XXX、XXX、XXX
+
+## 1.项目简介
+本项目基于开源仓库 [liangliangyy/DjangoBlog](https://github.com/liangliangyy/DjangoBlog) 进行阅读、代码标注、分析与二次维护开发。
+DjangoBlog 是使用Python Django框架开发的个人博客系统，原生支持Markdown文章发布、分类标签管理、用户登录、评论互动、全文检索、后台管理等博客核心能力。
+本课程实践任务目标：阅读开源高质量代码，完成代码标注、数据模型/架构分析、代码质量评估，最终完成至少一项功能修改/新增，掌握开源软件维护流程。
+
+## 2.技术栈
+- 后端：Python + Django
+- 前端：HTML / Template模板、JS、CSS
+- 数据库：SQLite（开发环境，可切换MySQL）
+- 版本管理：Git + GitHub，采用分支协作模式
+
