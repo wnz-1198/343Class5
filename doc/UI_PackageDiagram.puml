@@ -1,0 +1,96 @@
+@startuml DjangoBlog 界面模块包图
+' ===============================
+' DjangoBlog 系统 UI 包图（界面组成结构）
+' 软件工程大作业 - 第4周 界面设计说明书
+' ===============================
+
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam roundcorner 10
+skinparam ArrowColor #546E7A
+skinparam nodesep 35
+skinparam ranksep 60
+skinparam package {
+    BackgroundColor<<界面包>> #E8F5E9
+    BackgroundColor<<公共包>> #E3F2FD
+    BorderColor #455A64
+}
+skinparam component {
+    BackgroundColor #FFFFFF
+    BorderColor #607D8B
+}
+
+package "share_layout 公共布局包" <<公共包>> {
+    [base.html\n页面骨架（全站继承）] as Base
+    [base_account.html\n账号类页面骨架] as BaseAcc
+    [nav.html\n顶部导航栏] as Nav
+    [footer.html\n页脚] as Footer
+    [sidebar.html\n侧边栏] as Sidebar
+    [breadcrumb.html\n面包屑导航] as Crumb
+}
+
+package "comments 界面包" <<界面包>> {
+    [comment_list.html\n评论列表] as CList
+    [comment_item_tree.html\n楼中楼树] as CTree
+    [post_comment.html\n发表评论表单] as CForm
+}
+
+package "blog 界面包" <<界面包>> {
+    [article_index.html\n首页/文章列表] as Index
+    [article_detail.html\n文章详情] as Detail
+    [article_archives.html\n归档] as Arch
+    [links_list.html\n友情链接] as LinksP
+    [article_pagination.html\n分页组件] as Page
+    [article_meta_info.html\n文章元信息] as Meta
+    [article_tag_list.html\n标签列表] as TagList
+    [error_page.html\n错误页] as Err
+}
+
+package "accounts 界面包" <<界面包>> {
+    [login.html\n登录] as Login
+    [registration_form.html\n注册] as Reg
+    [forget_password.html\n忘记密码] as Forget
+    [result.html\n操作结果] as Result
+}
+
+package "oauth 界面包" <<界面包>> {
+    [oauth_applications.html\n第三方登录入口] as OAuthApps
+    [require_email.html\n邮箱补充] as ReqEmail
+    [bindsuccess.html\n绑定结果] as Bind
+}
+
+package "search 界面包" <<界面包>> {
+    [search.html\n搜索结果] as Search
+}
+
+' ---- 模板继承（界面包 → 公共布局包，向上依赖） ----
+Index .up.> Base : extends
+Detail .up.> Base
+Arch .up.> Base
+LinksP .up.> Base
+Err .up.> Base
+Search .up.> Base
+Login .up.> BaseAcc
+Reg .up.> BaseAcc
+Forget .up.> BaseAcc
+Result .up.> BaseAcc
+ReqEmail .up.> BaseAcc
+Bind .up.> BaseAcc
+
+' ---- 公共布局内部组合 ----
+Base .right.> Nav : include
+Base .right.> Footer
+Base .right.> Sidebar
+Base .right.> Crumb
+
+' ---- 包内关键组合 ----
+Index .down.> Page : include 分页
+Detail .down.> Meta : include 元信息
+Detail .down.> TagList : include 标签列表
+
+' ---- 跨包组合 ----
+Detail .left.> CList : include 评论列表
+CList .left.> CTree : 递归楼中楼
+Detail .left.> CForm : include 评论表单
+Login .right.> OAuthApps : include 第三方登录按钮
+@enduml
