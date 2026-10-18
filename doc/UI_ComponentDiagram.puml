@@ -1,0 +1,71 @@
+@startuml DjangoBlog 系统构件图
+' ===============================
+' DjangoBlog 系统构件图
+' 软件工程大作业 - 第4周 界面设计说明书
+' ===============================
+
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam roundcorner 10
+skinparam linetype ortho
+skinparam ArrowColor #546E7A
+skinparam component {
+    BackgroundColor<<展示层>> #E3F2FD
+    BackgroundColor<<业务层>> #E8F5E9
+    BackgroundColor<<基础设施>> #F3E5F5
+    BorderColor #455A64
+}
+skinparam database {
+    BackgroundColor #FFF3E0
+}
+skinparam actor {
+    BackgroundColor #ECEFF1
+}
+
+actor "游客" as guest
+actor "注册用户" as user
+actor "管理员" as admin
+
+component "浏览器\n（MVC 中的 View 渲染呈现）" as browser <<展示层>>
+
+component "Django URL 分发器\ndjangoblog/urls.py" as dispatcher <<展示层>>
+
+component "blog 应用\n文章/分类/标签/归档/友链\nIndexView·ArticleDetailView 等" as blogapp <<业务层>>
+component "comments 应用\n评论提交/楼中楼/Emoji反应\nCommentPostView·CommentReactionView" as commentsapp <<业务层>>
+component "accounts 应用\n登录/注册/找回密码\nLoginView·RegisterView" as accountsapp <<业务层>>
+component "oauth 应用\n第三方登录/绑定\nauthorize·oauthlogin" as oauthapp <<业务层>>
+component "ElasticSearch 检索构件\nEsSearchView（/search）" as esapp <<业务层>>
+component "Django Admin 后台\n内容与配置管理" as adminapp <<业务层>>
+
+component "邮件服务构件\n评论通知/找回密码验证码" as mail <<基础设施>>
+component "缓存服务构件\nRedis / LocalMem\n（列表·侧边栏·设置缓存）" as cache <<基础设施>>
+
+database "MySQL 8.0\nutf8mb4" as db
+database "Elasticsearch\n全文索引" as esdb
+
+guest --> browser
+user --> browser
+admin --> browser
+browser --> dispatcher : HTTP 请求 / 响应（MVT 模板渲染）
+
+dispatcher --> blogapp : / 、/article/ 、/category/ 、/tag/
+dispatcher --> commentsapp : /article/<id>/postcomment 、/comment/<id>/react
+dispatcher --> accountsapp : /login/ 、/register/ 、/forget_password/
+dispatcher --> oauthapp : /oauth/authorize 、/oauth/oauthlogin
+dispatcher --> esapp : /search
+dispatcher --> adminapp : /admin/
+
+blogapp --> db : ORM 读写
+commentsapp --> db : ORM 读写
+accountsapp --> db : ORM 读写
+oauthapp --> db : ORM 读写
+adminapp --> db : ORM 读写
+
+blogapp --> cache : 列表/侧边栏缓存
+commentsapp --> cache : 评论树缓存
+esapp --> esdb : 查询文章索引
+
+commentsapp --> mail : post_save 信号触发通知
+accountsapp --> mail : 找回密码验证码
+blogapp --> mail : 订阅/系统邮件
+@enduml

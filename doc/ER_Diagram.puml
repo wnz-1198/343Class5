@@ -255,14 +255,8 @@ CommentReaction }o--|| BlogUser : "用户"
 BlogUser "0..1" ||--o{ OAuthUser : "绑定"
 OAuthUser }o--o| BlogUser : "关联用户"
 
-' ---- 第三方配置独立 ----
-OAuthConfig
-
-' ---- 独立实体 ----
-Links
-SideBar
-BlogSettings
-commands
-EmailSendLog
+' ---- 独立实体（无外键关系）----
+' OAuthConfig / Links / SideBar / BlogSettings / commands / EmailSendLog 均已在上方定义，
+' 此处不做裸引用（PlantUML 对孤立实体引用会报语法错误）
 
 @enduml

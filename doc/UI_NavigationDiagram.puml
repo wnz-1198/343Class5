@@ -1,0 +1,73 @@
+@startuml DjangoBlog 界面跳转关系图
+' ===============================
+' DjangoBlog 系统界面跳转关系图
+' 软件工程大作业 - 第4周 界面设计说明书
+' ===============================
+
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam roundcorner 12
+skinparam ArrowColor #455A64
+skinparam nodesep 45
+skinparam ranksep 60
+skinparam rectangle {
+    BackgroundColor<<展示>> #E3F2FD
+    BackgroundColor<<用户>> #FFF3E0
+    BackgroundColor<<系统>> #F3E5F5
+    BorderColor #455A64
+    FontStyle plain
+}
+
+title DjangoBlog 界面跳转关系（自上而下）
+
+rectangle "首页\n/" as index <<展示>>
+
+rectangle "文章详情页\n/article/…" as detail <<展示>>
+rectangle "分类详情页\ncategory/…" as category <<展示>>
+rectangle "标签详情页\ntag/…" as tag <<展示>>
+rectangle "作者详情页\nauthor/…" as author <<展示>>
+rectangle "归档页\narchives.html" as archives <<展示>>
+rectangle "友情链接页\nlinks.html" as links <<展示>>
+rectangle "搜索结果页\nsearch?q=…" as search <<展示>>
+
+rectangle "登录页\nlogin/" as login <<用户>>
+rectangle "注册页\nregister/" as register <<用户>>
+rectangle "忘记密码\nforget_password/" as forget <<用户>>
+rectangle "账号结果页\naccount/result.html" as result <<用户>>
+rectangle "第三方邮箱补充\noauth/requireemail/…" as oauthemail <<用户>>
+rectangle "绑定成功页\noauth/bindsuccess/…" as oauthbind <<用户>>
+
+rectangle "Django 管理后台\n/admin/" as admin <<系统>>
+rectangle "404/500/403 错误页" as error <<系统>>
+
+' ---- 内容浏览主线 ----
+index --> detail : 点击文章标题
+detail --> index : LOGO / 面包屑
+index --> category : 分类菜单
+category --> detail : 点击文章标题
+category --> index : 面包屑返回
+index --> tag : 标签 / 标签云
+tag --> detail : 点击文章标题
+detail --> author : 点击作者名
+author --> detail : 点击文章标题
+index --> archives : 导航"归档"
+index --> links : 导航"友链"
+index --> search : 顶部搜索框
+search --> detail : 点击搜索结果
+
+' ---- 用户中心 ----
+index --> login : 导航"登录"
+login --> index : 登录成功
+index --> register : 登录页"注册"入口
+register --> index : 注册成功自动登录
+login --> forget : "忘记密码"入口
+forget --> result : 校验/重置结果
+login --> oauthemail : 第三方平台登录
+oauthemail --> oauthbind : 邮箱确认成功
+oauthbind --> index : 返回首页
+detail --> login : 未登录发表评论被拦截
+
+' ---- 系统级 ----
+index --> admin : 管理员进入后台
+error --> index : 返回首页
+@enduml
