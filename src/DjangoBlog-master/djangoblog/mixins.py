@@ -42,6 +42,7 @@ class TimeStampedModel(models.Model):
         help_text=_('The date and time when this object was last modified')
     )
 
+    # ZZC: Meta 配置抽象模型、默认排序和最新记录字段。
     class Meta:
         abstract = True
         ordering = ['-created_at']

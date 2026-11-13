@@ -117,26 +117,32 @@ class BasePlugin:
         """渲染侧边栏组件"""
         return None
 
+    # ZZC: 子类可重写此方法，在文章底部渲染插件组件。
     def render_article_bottom_widget(self, context, **kwargs):
         """渲染文章底部组件"""
         return None
 
+    # ZZC: 子类可重写此方法，在文章顶部渲染插件组件。
     def render_article_top_widget(self, context, **kwargs):
         """渲染文章顶部组件"""
         return None
 
+    # ZZC: 子类可重写此方法，在页头位置渲染插件组件。
     def render_header_widget(self, context, **kwargs):
         """渲染页头组件"""
         return None
 
+    # ZZC: 子类可重写此方法，在页脚位置渲染插件组件。
     def render_footer_widget(self, context, **kwargs):
         """渲染页脚组件"""
         return None
 
+    # ZZC: 子类可重写此方法，在评论区前方渲染插件组件。
     def render_comment_before_widget(self, context, **kwargs):
         """渲染评论前组件"""
         return None
 
+    # ZZC: 子类可重写此方法，在评论区后方渲染插件组件。
     def render_comment_after_widget(self, context, **kwargs):
         """渲染评论后组件"""
         return None
@@ -177,10 +183,12 @@ class BasePlugin:
         """获取插件CSS文件列表"""
         return []
 
+    # ZZC: 子类通过此方法声明插件需要加载的 JavaScript 文件。
     def get_js_files(self):
         """获取插件JavaScript文件列表"""
         return []
 
+    # ZZC: 返回需在 head 早期阻塞加载的关键 HTML，用于防闪烁等场景。
     def get_critical_head_html(self, context=None):
         """
         获取需要在<head>最早执行的关键HTML内容（阻塞式加载）
@@ -193,10 +201,12 @@ class BasePlugin:
         """
         return ""
 
+    # ZZC: 返回在 CSS 之后插入 head 的插件 HTML。
     def get_head_html(self, context=None):
         """获取需要插入到<head>中的HTML内容（在CSS之后）"""
         return ""
 
+    # ZZC: 返回在 body 底部插入的插件 HTML。
     def get_body_html(self, context=None):
         """获取需要插入到<body>底部的HTML内容"""
         return ""
