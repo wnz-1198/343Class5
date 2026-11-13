@@ -54,6 +54,7 @@ LOCALS = threading.local()
 LOCALS.RAM_STORE = None
 
 
+# ZZC: WhooshHtmlFormatter 统一搜索结果的高亮标签格式。
 class WhooshHtmlFormatter(HtmlFormatter):
     """
     This is a HtmlFormatter simpler than the whoosh.HtmlFormatter.
@@ -357,8 +358,8 @@ class WhooshSearchBackend(BaseSearchBackend):
         page_num += 1
         return page_num, page_length
 
-    @log_query
     # ZZC: 解析查询字符串、执行搜索、处理排序分页高亮和拼写建议。
+    @log_query
     def search(
             self,
             query_string,
