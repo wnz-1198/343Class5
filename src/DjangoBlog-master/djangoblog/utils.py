@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # encoding: utf-8
 
+# ZZC: 本模块提供鉴权签名、缓存、Markdown 渲染、邮件通知、配置读取和 HTML 清洗工具。
 
 import logging
 import os
@@ -21,20 +22,25 @@ from django.templatetags.static import static
 logger = logging.getLogger(__name__)
 
 
+# ZZC: 获取最新文章和评论的主键，可用于生成缓存版本号或增量处理标识。
 def get_max_articleid_commentid():
     from blog.models import Article
     from comments.models import Comment
     return (Article.objects.latest().pk, Comment.objects.latest().pk)
 
 
+# ZZC: 使用 SECRET_KEY 和 HMAC-SHA256 生成不可伪造的签名值。
 def get_sha256(value):
     key = settings.SECRET_KEY.encode('utf-8')
     msg = str(value).encode('utf-8')
     return hmac.new(key, msg, hashlib.sha256).hexdigest()
 
 
+# ZZC: 通用函数缓存装饰器，优先使用视图提供的 cache key，否则根据调用参数生成摘要。
 def cache_decorator(expiration=3 * 60):
+    # ZZC: 外层工厂接收缓存秒数，并返回真正包装业务函数的装饰器。
     def wrapper(func):
+        # ZZC: news 保留原函数调用方式，同时封装缓存命中、未命中和空值处理。
         def news(*args, **kwargs):
             try:
                 view = args[0]
@@ -69,6 +75,7 @@ def cache_decorator(expiration=3 * 60):
     return wrapper
 
 
+# ZZC: 根据路径和站点信息重建 Django 视图缓存键，并删除对应缓存。
 def expire_view_cache(path, servername, serverport, key_prefix=None):
     '''
     刷新视图缓存
@@ -94,13 +101,16 @@ def expire_view_cache(path, servername, serverport, key_prefix=None):
     return False
 
 
+# ZZC: 当前站点信息访问频繁，使用缓存减少 Site 表的重复查询。
 @cache_decorator()
 def get_current_site():
     site = Site.objects.get_current()
     return site
 
 
+# ZZC: CommonMarkdown 统一 Markdown 转换规则，并按需返回 HTML 和目录结构。
 class CommonMarkdown:
+    # ZZC: 创建一次 Markdown 渲染器，同时提取转换后的正文和 TOC。
     @staticmethod
     def _convert_markdown(value):
         md = markdown.Markdown(
@@ -115,17 +125,20 @@ class CommonMarkdown:
         toc = md.toc
         return body, toc
 
+    # ZZC: 需要显示文章目录时返回正文和目录两部分。
     @staticmethod
     def get_markdown_with_toc(value):
         body, toc = CommonMarkdown._convert_markdown(value)
         return body, toc
 
+    # ZZC: 仅需要正文时丢弃目录，减少调用方处理成本。
     @staticmethod
     def get_markdown(value):
         body, toc = CommonMarkdown._convert_markdown(value)
         return body
 
 
+# ZZC: 通过 Django Signal 异步层发送邮件，让工具函数不必直接依赖邮件模型。
 def send_email(emailto, title, content):
     from djangoblog.blog_signals import send_email_signal
     send_email_signal.send(
@@ -135,11 +148,13 @@ def send_email(emailto, title, content):
         content=content)
 
 
+# ZZC: 从数字字符集中无放回抽取六位字符，生成注册或重置密码验证码。
 def generate_code() -> str:
     """生成随机数验证码"""
     return ''.join(random.sample(string.digits, 6))
 
 
+# ZZC: 对字典的键和值执行 URL 编码，再拼接成查询字符串。
 def parse_dict_to_url(dict):
     from urllib.parse import quote
     url = '&'.join(['{}={}'.format(quote(k, safe='/'), quote(v, safe='/'))
@@ -147,6 +162,7 @@ def parse_dict_to_url(dict):
     return url
 
 
+# ZZC: 优先读取缓存；若博客设置不存在则创建默认配置，并缓存第一条设置记录。
 def get_blog_setting():
     value = cache.get('get_blog_setting')
     if value:
@@ -175,6 +191,7 @@ def get_blog_setting():
         return value
 
 
+# ZZC: 下载第三方头像、生成 UUID 文件名并保存到本地静态目录。
 def save_user_avatar(url):
     '''
     保存用户头像
@@ -203,6 +220,7 @@ def save_user_avatar(url):
         return static('blog/img/avatar.png')
 
 
+# ZZC: 删除所有侧边栏展示类型对应的缓存，使配置变更能够及时生效。
 def delete_sidebar_cache():
     from blog.models import LinkShowType
     keys = ["sidebar" + x for x in LinkShowType.values]
@@ -211,12 +229,14 @@ def delete_sidebar_cache():
         cache.delete(k)
 
 
+# ZZC: 根据模板片段前缀和参数生成固定缓存键，并删除对应片段缓存。
 def delete_view_cache(prefix, keys):
     from django.core.cache.utils import make_template_fragment_key
     key = make_template_fragment_key(prefix, keys)
     cache.delete(key)
 
 
+# ZZC: 优先使用项目配置的静态资源地址，否则根据当前站点域名构造默认地址。
 def get_resource_url():
     if settings.STATIC_URL:
         return settings.STATIC_URL
@@ -245,6 +265,7 @@ ALLOWED_CLASSES = [
     's1', 'ss', 'bp', 'vc', 'vg', 'vi', 'il'
 ]
 
+# ZZC: 清理 HTML 的 class 属性，只保留代码高亮白名单中的 CSS 类。
 def class_filter(tag, name, value):
     """自定义class属性过滤器"""
     if name == 'class':
@@ -271,6 +292,7 @@ ALLOWED_ATTRIBUTES = {
 # 安全的协议白名单 - 防止javascript:等危险协议
 ALLOWED_PROTOCOLS = ['http', 'https', 'mailto']
 
+# ZZC: 使用 Bleach 白名单过滤标签、属性、协议和注释，降低 Markdown 内容引发 XSS 的风险。
 def sanitize_html(html):
     """
     安全的HTML清理函数

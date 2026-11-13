@@ -5,9 +5,11 @@
 Django Blog 全局常量定义
 包含缓存超时时间、缓存键模板等配置
 """
+# ZZC: 本模块集中定义缓存时长、缓存键、HTTP 状态码和分页参数，减少重复字面量。
 
 
 # ===== 缓存过期时间（秒）=====
+# ZZC: CacheTimeout 把秒数换算集中到一处，便于统一调整缓存策略。
 class CacheTimeout:
     """
     缓存超时时间常量
@@ -34,6 +36,7 @@ class CacheTimeout:
 
 
 # ===== 缓存键前缀 =====
+# ZZC: CacheKey 统一缓存键模板，避免不同模块使用不一致的键名。
 class CacheKey:
     """
     缓存键模板
@@ -69,6 +72,7 @@ class CacheKey:
 
 
 # ===== HTTP 状态码 =====
+# ZZC: HttpStatus 提供可读的 HTTP 状态码常量。
 class HttpStatus:
     """HTTP 状态码常量"""
     OK = 200
@@ -86,6 +90,7 @@ class HttpStatus:
 
 
 # ===== 分页配置 =====
+# ZZC: Pagination 统一默认分页大小、最大页大小和分页查询参数名。
 class Pagination:
     """分页相关常量"""
     DEFAULT_PAGE_SIZE = 10

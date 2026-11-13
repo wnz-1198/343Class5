@@ -9,6 +9,7 @@ https://docs.djangoproject.com/en/1.10/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/1.10/ref/settings/
 """
+# ZZC: 本模块集中配置数据库、应用、中间件、搜索、缓存、邮件、静态资源和插件。
 import os
 import sys
 from pathlib import Path
@@ -16,32 +17,34 @@ from pathlib import Path
 from django.utils.translation import gettext_lazy as _
 
 
+# ZZC: 将指定环境变量解析为布尔值；变量不存在时使用调用方提供的默认值。
 def env_to_bool(env, default):
     str_val = os.environ.get(env)
     return default if str_val is None else str_val == 'True'
 
 
-# Build paths inside the project like this: BASE_DIR / 'subdir'.
+# ZZC: BASE_DIR 指向 manage.py 所在项目根目录，后续资源路径都基于它构造。
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/1.10/howto/deployment/checklist/
 
-# SECURITY WARNING: keep the secret key used in production secret!
+# ZZC: 优先从环境变量读取签名密钥；源码中的回退值只适合开发环境。
 SECRET_KEY = os.environ.get(
     'DJANGO_SECRET_KEY') or 'n9ceqv38)#&mwuat@(mjb_p%em$e8$qyr#fw9ot!=ba6lijx-6'
-# SECURITY WARNING: don't run with debug turned on in production!
+# ZZC: DEBUG 默认开启，部署时必须通过 DJANGO_DEBUG=False 关闭调试信息。
 DEBUG = env_to_bool('DJANGO_DEBUG', True)
 # DEBUG = False
 TESTING = len(sys.argv) > 1 and sys.argv[1] == 'test'
 
-# ALLOWED_HOSTS = []
+# ZZC: 当前允许所有主机访问，生产部署应改为明确域名，避免 Host Header 攻击面扩大。
 ALLOWED_HOSTS = ['*', '127.0.0.1', 'example.com']
 # django 4.0新增配置
 CSRF_TRUSTED_ORIGINS = ['http://example.com']
 # Application definition
 
 
+# ZZC: 第三方组件、Django 自带应用和业务 App 均在此注册，djangoblog 负责项目级能力。
 INSTALLED_APPS = [
     # 'django.contrib.admin',
     'django.contrib.admin.apps.SimpleAdminConfig',
@@ -63,6 +66,7 @@ INSTALLED_APPS = [
     'djangoblog'
 ]
 
+# ZZC: 中间件顺序决定请求进入视图和响应返回时的处理顺序。
 MIDDLEWARE = [
 
     'django.middleware.security.SecurityMiddleware',
@@ -80,8 +84,10 @@ MIDDLEWARE = [
     'blog.middleware.OnlineMiddleware'
 ]
 
+# ZZC: 项目根路由入口，全部业务路由由 djangoblog.urls 汇总。
 ROOT_URLCONF = 'djangoblog.urls'
 
+# ZZC: 模板系统启用应用模板目录，并注入调试、请求、认证、消息和 SEO 上下文。
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
@@ -99,12 +105,14 @@ TEMPLATES = [
     },
 ]
 
+# ZZC: 生产服务器通过此配置定位 WSGI 应用对象。
 WSGI_APPLICATION = 'djangoblog.wsgi.application'
 
 # Database
 # https://docs.djangoproject.com/en/1.10/ref/settings/#databases
 
 
+# ZZC: 数据库连接参数优先读取环境变量，默认使用本机 MySQL 的 djangoblog 数据库。
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
@@ -121,6 +129,7 @@ DATABASES = {
 # Password validation
 # https://docs.djangoproject.com/en/1.10/ref/settings/#auth-password-validators
 
+# ZZC: 密码验证器分别检查用户信息相似度、最小长度、常见密码和纯数字密码。
 AUTH_PASSWORD_VALIDATORS = [
     {
         'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
@@ -136,6 +145,7 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
+# ZZC: 声明项目支持的语言，并指定翻译文件存放目录。
 LANGUAGES = (
     ('en', _('English')),
     ('zh-hans', _('Simplified Chinese')),
@@ -147,6 +157,7 @@ LOCALE_PATHS = (
 
 LANGUAGE_CODE = 'zh-hans'
 
+# ZZC: 项目按中国标准时间显示内容；USE_TZ=False 表示数据库配置中按本地时间处理。
 TIME_ZONE = 'Asia/Shanghai'
 
 USE_I18N = True
@@ -156,6 +167,7 @@ USE_L10N = True
 USE_TZ = False
 
 # Session settings
+# ZZC: 普通会话保存两周，勾选“记住我”的登录有效期由项目逻辑延长。
 SESSION_COOKIE_AGE = 1209600  # 2周（Django默认值）
 REMEMBER_ME_LOGIN_TTL = 2626560  # 30天（勾选"记住我"时使用）
 
@@ -207,6 +219,7 @@ REMEMBER_ME_LOGIN_TTL = 2626560  # 30天（勾选"记住我"时使用）
 #   - ELASTICSEARCH_CLIENT_CERT: 客户端证书路径
 #   - ELASTICSEARCH_CLIENT_KEY: 客户端私钥路径
 
+# ZZC: 设置该环境变量时优先启用 Elasticsearch；否则使用下方 Whoosh 默认配置。
 if os.environ.get('DJANGO_ELASTICSEARCH_HOST'):
     # 通过环境变量配置 Elasticsearch（生产环境）
     _es_config = {
@@ -233,6 +246,7 @@ if os.environ.get('DJANGO_ELASTICSEARCH_HOST'):
     ELASTICSEARCH_DSL = {'default': _es_config}
 
 # === Haystack 配置 ===
+# ZZC: Haystack 根据是否成功生成 ELASTICSEARCH_DSL 配置选择具体搜索引擎。
 if 'ELASTICSEARCH_DSL' in locals():
     # 使用 Elasticsearch
     HAYSTACK_CONNECTIONS = {
@@ -250,6 +264,7 @@ else:
     }
 
 # Automatically update searching index
+# ZZC: 模型保存或删除时自动更新搜索索引，使搜索结果与数据库内容保持一致。
 HAYSTACK_SIGNAL_PROCESSOR = 'haystack.signals.RealtimeSignalProcessor'
 # Allow user login with username and password
 AUTHENTICATION_BACKENDS = [
@@ -268,6 +283,7 @@ STATICFILES_DIRS = [
 # Vite开发服务器URL（开发模式）
 VITE_DEV_SERVER_URL = 'http://localhost:5173'
 
+# ZZC: 项目使用自定义用户模型，禁止在未迁移前改回 Django 默认 User。
 AUTH_USER_MODEL = 'accounts.BlogUser'
 LOGIN_URL = '/login/'
 
@@ -280,10 +296,12 @@ BOOTSTRAP_COLOR_TYPES = [
 ]
 
 # paginate
+# ZZC: 业务列表默认每页十条，HTTP 缓存最长保存三十天。
 PAGINATE_BY = 10
 # http cache timeout
 CACHE_CONTROL_MAX_AGE = 2592000
 # cache setting
+# ZZC: 默认使用进程内缓存，适合单进程开发；多进程部署应切换 Redis 等共享缓存。
 CACHES = {
     'default': {
         'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
@@ -292,6 +310,7 @@ CACHES = {
     }
 }
 # 使用redis作为缓存
+# ZZC: 配置 Redis 地址后覆盖本地内存缓存，使多个应用实例共享同一缓存。
 if os.environ.get("DJANGO_REDIS_URL"):
     CACHES = {
         'default': {
@@ -300,11 +319,13 @@ if os.environ.get("DJANGO_REDIS_URL"):
         }
     }
 
+# ZZC: django.contrib.sites 使用 ID=1 的站点记录；初始化数据后需确认其域名正确。
 SITE_ID = 1
 BAIDU_NOTIFY_URL = os.environ.get('DJANGO_BAIDU_NOTIFY_URL') \
                    or 'http://data.zz.baidu.com/urls?site=https://www.lylinux.net&token=1uAOGrMsUm5syDGn'
 
 # Email:
+# ZZC: 邮件默认通过 SMTP 发送，账号密码从环境变量读取。
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_USE_TLS = env_to_bool('DJANGO_EMAIL_TLS', False)
 EMAIL_USE_SSL = env_to_bool('DJANGO_EMAIL_SSL', True)
@@ -320,10 +341,12 @@ ADMINS = [('admin', os.environ.get('DJANGO_ADMIN_EMAIL') or 'admin@admin.com')]
 WXADMIN = os.environ.get(
     'DJANGO_WXADMIN_PASSWORD') or '995F03AC401D6CABABAEF756FC4D43C7'
 
+# ZZC: 日志目录不存在时自动创建，供轮转文件处理器写入应用日志。
 LOG_PATH = os.path.join(BASE_DIR, 'logs')
 if not os.path.exists(LOG_PATH):
     os.makedirs(LOG_PATH, exist_ok=True)
 
+# ZZC: 日志同时输出到控制台和按天轮转文件，并保留最近五份历史日志。
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
@@ -380,6 +403,7 @@ LOGGING = {
     }
 }
 
+# ZZC: 静态文件查找器负责从应用目录和压缩器输出目录定位资源。
 STATICFILES_FINDERS = (
     'django.contrib.staticfiles.finders.FileSystemFinder',
     'django.contrib.staticfiles.finders.AppDirectoriesFinder',
@@ -387,6 +411,7 @@ STATICFILES_FINDERS = (
     'compressor.finders.CompressorFinder',
 )
 # 开发模式下禁用压缩，使用Vite处理静态资源
+# ZZC: 开发环境关闭压缩；生产环境启用 CSS/JavaScript 压缩以减小传输体积。
 COMPRESS_ENABLED = not DEBUG
 # 根据环境变量决定是否启用离线压缩
 COMPRESS_OFFLINE = os.environ.get('COMPRESS_OFFLINE', 'False').lower() == 'true'
@@ -439,15 +464,18 @@ STATICFILES_STORAGE = 'django.contrib.staticfiles.storage.ManifestStaticFilesSto
 COMPRESS_URL = STATIC_URL
 COMPRESS_ROOT = STATIC_ROOT
 
+# ZZC: 用户上传文件保存在 uploads 目录，并通过 /media/ 路径对外访问。
 MEDIA_ROOT = os.path.join(BASE_DIR, 'uploads')
 MEDIA_URL = '/media/'
 X_FRAME_OPTIONS = 'SAMEORIGIN'
 
 
 
+# ZZC: 新模型默认使用 64 位自增主键，降低数据增长后主键耗尽的风险。
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # Plugin System
+# ZZC: 插件加载器只扫描该目录，并按 ACTIVE_PLUGINS 的顺序初始化插件。
 PLUGINS_DIR = BASE_DIR / 'plugins'
 ACTIVE_PLUGINS = [
     'article_copyright',

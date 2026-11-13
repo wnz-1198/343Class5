@@ -1,3 +1,4 @@
+# ZZC: 本模块定义插件基类，统一插件元数据、位置渲染、模板和静态资源访问接口。
 import logging
 from pathlib import Path
 
@@ -7,6 +8,7 @@ from django.template.loader import render_to_string
 logger = logging.getLogger(__name__)
 
 
+# ZZC: BasePlugin 是各业务插件的父类，子类通过重写钩子和渲染方法扩展博客。
 class BasePlugin:
     # 插件元数据
     PLUGIN_NAME = None
@@ -19,6 +21,7 @@ class BasePlugin:
     DEFAULT_PRIORITY = 100  # 默认优先级（数字越小优先级越高）
     POSITION_PRIORITIES = {}  # 各位置的优先级 {'sidebar': 50, 'article_bottom': 80}
 
+    # ZZC: 初始化时校验必要元数据，定位插件目录，并执行子类初始化与钩子注册。
     def __init__(self):
         if not all([self.PLUGIN_NAME, self.PLUGIN_DESCRIPTION, self.PLUGIN_VERSION]):
             raise ValueError("Plugin metadata (PLUGIN_NAME, PLUGIN_DESCRIPTION, PLUGIN_VERSION) must be defined.")
@@ -30,16 +33,19 @@ class BasePlugin:
         self.init_plugin()
         self.register_hooks()
 
+    # ZZC: 通过类定义所在文件定位插件目录，避免依赖调用方的工作目录。
     def _get_plugin_directory(self):
         """获取插件目录路径"""
         import inspect
         plugin_file = inspect.getfile(self.__class__)
         return Path(plugin_file).parent
 
+    # ZZC: 使用插件目录名作为稳定标识，用于模板和静态资源路径拼接。
     def _get_plugin_slug(self):
         """获取插件标识符（目录名）"""
         return self.plugin_dir.name
 
+    # ZZC: 子类可重写初始化逻辑；基类默认只记录插件已初始化。
     def init_plugin(self):
         """
         插件初始化逻辑
@@ -47,6 +53,7 @@ class BasePlugin:
         """
         logger.info(f'{self.PLUGIN_NAME} initialized.')
 
+    # ZZC: 子类在此把回调注册到系统钩子；默认插件没有钩子。
     def register_hooks(self):
         """
         注册插件钩子
@@ -55,6 +62,7 @@ class BasePlugin:
         pass
 
     # === 位置渲染系统 ===
+    # ZZC: 根据位置检查支持范围和显示条件，再动态调用对应 render_*_widget 方法。
     def render_position_widget(self, position, context, **kwargs):
         """
         根据位置渲染插件组件
@@ -88,6 +96,7 @@ class BasePlugin:
 
         return None
 
+    # ZZC: 默认所有组件都显示，子类可根据请求上下文添加条件。
     def should_display(self, position, context, **kwargs):
         """
         判断插件是否应该在指定位置显示
@@ -103,7 +112,7 @@ class BasePlugin:
         """
         return True
 
-    # === 各位置渲染方法 - 子类重写 ===
+    # ZZC: 以下 render 方法定义插件可插入的页面位置，子类按需覆盖。
     def render_sidebar_widget(self, context, **kwargs):
         """渲染侧边栏组件"""
         return None
@@ -133,6 +142,7 @@ class BasePlugin:
         return None
 
     # === 模板系统 ===
+    # ZZC: 渲染插件模板；模板缺失时返回空字符串，避免单个插件破坏整页。
     def render_template(self, template_name, context=None):
         """
         渲染插件模板
@@ -156,11 +166,13 @@ class BasePlugin:
             return ""
 
     # === 静态资源系统 ===
+    # ZZC: 统一生成插件静态文件 URL，子类无需重复拼接路径。
     def get_static_url(self, static_file):
         """获取插件静态文件URL"""
         from django.templatetags.static import static
         return static(f"{self.plugin_slug}/static/{self.plugin_slug}/{static_file}")
 
+    # ZZC: 子类通过这两个方法声明需要加载的 CSS 和 JavaScript 文件。
     def get_css_files(self):
         """获取插件CSS文件列表"""
         return []
@@ -189,6 +201,7 @@ class BasePlugin:
         """获取需要插入到<body>底部的HTML内容"""
         return ""
 
+    # ZZC: 返回插件元数据和运行时目录，供插件管理页面展示。
     def get_plugin_info(self):
         """
         获取插件信息

@@ -2,6 +2,7 @@
 插件系统测试
 测试插件加载、钩子注册和执行
 """
+# ZZC: 本模块验证插件钩子、基类、加载器和内置插件的行为。
 import os
 from unittest.mock import Mock, patch
 
@@ -17,6 +18,7 @@ from djangoblog.test_base import BaseTestCase, PluginTestMixin
 from djangoblog.plugin_manage.hook_constants import HEAD_RESOURCES_HOOK, BODY_RESOURCES_HOOK
 
 
+# ZZC: 钩子测试检查注册、Action、Filter、多回调和异常隔离。
 class PluginHooksTest(TestCase, PluginTestMixin):
     """测试插件钩子系统"""
 
@@ -89,6 +91,7 @@ class PluginHooksTest(TestCase, PluginTestMixin):
         self.assertIn('success', result)
 
 
+# ZZC: 插件基类测试覆盖初始化、配置信息、钩子注册和上下文能力。
 class BasePluginTest(BaseTestCase):
     """测试基础插件类"""
 
@@ -128,6 +131,7 @@ class BasePluginTest(BaseTestCase):
         self.assertEqual(plugin_info['name'], '测试插件')
 
 
+# ZZC: 加载器测试验证正常加载和异常插件的隔离处理。
 class PluginLoaderTest(TestCase):
     """测试插件加载器"""
 
@@ -146,6 +150,7 @@ class PluginLoaderTest(TestCase):
             self.assertIsInstance(plugins, list)
 
 
+# ZZC: 阅读时间插件测试验证加载状态和阅读时长计算。
 class ReadingTimePluginTest(BaseTestCase, PluginTestMixin):
     """测试阅读时间插件"""
 
@@ -174,6 +179,7 @@ class ReadingTimePluginTest(BaseTestCase, PluginTestMixin):
         self.assertGreater(len(long_result), len(result))
 
 
+# ZZC: 浏览计数插件测试验证插件加载和访问计数的递增。
 class ViewCountPluginTest(BaseTestCase, PluginTestMixin):
     """测试浏览次数插件"""
 
@@ -193,6 +199,7 @@ class ViewCountPluginTest(BaseTestCase, PluginTestMixin):
         self.assertGreaterEqual(self.article.views, initial_views)
 
 
+# ZZC: SEO 插件测试验证插件加载和页面元标签输出。
 class SEOOptimizerPluginTest(BaseTestCase, PluginTestMixin):
     """测试 SEO 优化插件"""
 
@@ -213,6 +220,7 @@ class SEOOptimizerPluginTest(BaseTestCase, PluginTestMixin):
         self.assertContains(response, '<meta')
 
 
+# ZZC: 版权插件测试验证插件加载和文章版权声明注入。
 class ArticleCopyrightPluginTest(BaseTestCase, PluginTestMixin):
     """测试文章版权插件"""
 
@@ -230,6 +238,7 @@ class ArticleCopyrightPluginTest(BaseTestCase, PluginTestMixin):
         # self.assertContains(response, '版权')
 
 
+# ZZC: 外链插件测试验证插件加载和外部链接安全属性处理。
 class ExternalLinksPluginTest(BaseTestCase, PluginTestMixin):
     """测试外部链接插件"""
 

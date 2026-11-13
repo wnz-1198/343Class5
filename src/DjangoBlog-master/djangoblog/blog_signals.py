@@ -1,3 +1,4 @@
+# ZZC: 本模块用 Django Signal 处理邮件、OAuth 头像和模型保存后的缓存失效。
 import _thread
 import logging
 
@@ -18,11 +19,13 @@ from oauth.models import OAuthUser
 
 logger = logging.getLogger(__name__)
 
+# ZZC: 自定义登录信号只传递 OAuth 用户主键，避免在信号层暴露完整用户对象。
 oauth_user_login_signal = django.dispatch.Signal(['id'])
 send_email_signal = django.dispatch.Signal(
     ['emailto', 'title', 'content'])
 
 
+# ZZC: 邮件信号处理器发送 HTML 邮件，并把成功或失败结果写入邮件日志。
 @receiver(send_email_signal)
 def send_email_signal_handler(sender, **kwargs):
     emailto = kwargs['emailto']
@@ -51,6 +54,7 @@ def send_email_signal_handler(sender, **kwargs):
     log.save()
 
 
+# ZZC: OAuth 登录后把外部头像转存到本地，并清除可能过期的侧边栏缓存。
 @receiver(oauth_user_login_signal)
 def oauth_user_login_signal_handler(sender, **kwargs):
     id = kwargs['id']
@@ -64,6 +68,7 @@ def oauth_user_login_signal_handler(sender, **kwargs):
     delete_sidebar_cache()
 
 
+# ZZC: 模型保存后通知搜索引擎，并根据对象类型精准清理受影响的页面缓存。
 @receiver(post_save)
 def model_post_save_callback(
         sender,
@@ -73,15 +78,16 @@ def model_post_save_callback(
         using,
         update_fields,
         **kwargs):
+    # ZZC: 后台日志不属于博客内容，无需触发搜索通知或页面缓存清理。
     if isinstance(instance, LogEntry):
         return
 
-    # 检查是否只更新了浏览量
+    # ZZC: 浏览量更新频繁且不影响主要页面内容，跳过整条信号处理链。
     is_update_views = update_fields == {'views'}
     if is_update_views:
         return  # 浏览量更新不需要清理缓存
 
-    # 搜索引擎通知
+    # ZZC: 具备 get_full_url() 的内容对象才适合主动提交给搜索引擎。
     if 'get_full_url' in dir(instance):
         if not settings.TESTING:
             try:
@@ -90,7 +96,7 @@ def model_post_save_callback(
             except Exception as ex:
                 logger.error("notify sipder", ex)
 
-    # 评论相关的缓存清理
+    # ZZC: 已启用评论会改变文章详情、评论列表和侧边栏，因此需要联动清理缓存。
     if isinstance(instance, Comment):
         if instance.is_enable:
             path = instance.article.get_absolute_url()
@@ -112,9 +118,10 @@ def model_post_save_callback(
             delete_sidebar_cache()
             cache.delete('seo_processor')
 
+            # ZZC: 邮件发送放入独立线程，避免 SMTP 延迟阻塞评论保存请求。
             _thread.start_new_thread(send_comment_email, (instance,))
 
-    # 文章相关的精细化缓存清理
+    # ZZC: 文章、分类和标签分别影响不同页面，使用最小范围删除以保留其他缓存。
     elif 'get_full_url' in dir(instance):
         from blog.models import Article, Category, Tag
 
@@ -169,6 +176,7 @@ def model_post_save_callback(
             cache.delete('seo_processor')
 
 
+# ZZC: 用户登录或登出会改变头部信息，因此同步清除侧边栏缓存。
 @receiver(user_logged_in)
 @receiver(user_logged_out)
 def user_auth_callback(sender, request, user, **kwargs):

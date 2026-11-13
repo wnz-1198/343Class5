@@ -2,6 +2,7 @@
 可复用的测试基类和工具
 提供通用的测试数据创建和断言方法
 """
+# ZZC: 本模块集中创建测试数据并提供视图、后台、插件和外部服务的测试辅助工具。
 from django.contrib.auth.models import Permission
 from django.test import TestCase, Client, RequestFactory
 from django.utils import timezone
@@ -11,12 +12,14 @@ from blog.models import Article, Category, Tag, BlogSettings
 from comments.models import Comment
 
 
+# ZZC: BaseTestCase 为各业务测试统一准备用户、分类、标签、文章和博客配置。
 class BaseTestCase(TestCase):
     """
     通用测试基类
     提供常用的测试数据创建方法
     """
 
+    # ZZC: 初始化 Django Client 和 RequestFactory，并创建基础业务数据。
     def setUp(self):
         self.client = Client()
         self.factory = RequestFactory()
@@ -134,6 +137,7 @@ class BaseTestCase(TestCase):
         self.assertIn(response.status_code, [403, 302])
 
 
+# ZZC: ViewTestMixin 封装常见视图状态码和 AJAX 响应断言。
 class ViewTestMixin:
     """
     视图测试混入类
@@ -177,6 +181,7 @@ class ViewTestMixin:
         return response
 
 
+# ZZC: AdminTestMixin 生成后台 URL 并验证不同用户的访问权限。
 class AdminTestMixin:
     """
     Admin 测试混入类
@@ -212,6 +217,7 @@ class AdminTestMixin:
         return response
 
 
+# ZZC: PluginTestMixin 提供插件上下文、钩子注册和配置模拟工具。
 class PluginTestMixin:
     """
     插件测试混入类
@@ -244,6 +250,7 @@ class PluginTestMixin:
             os.environ[key] = str(value)
 
 
+# ZZC: MockExternalService 统一构造 HTTP、Elasticsearch 和缓存模拟返回值。
 class MockExternalService:
     """
     外部服务 Mock 工具

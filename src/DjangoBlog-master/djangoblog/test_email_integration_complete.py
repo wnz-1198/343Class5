@@ -2,6 +2,7 @@
 Complete Email Integration Tests - End to End
 完整的邮件集成测试 - 端到端测试完整业务流程
 """
+# ZZC: 本模块从用户操作出发验证注册、重置密码和评论通知的完整端到端流程。
 import re
 from django.test import TestCase, Client, override_settings
 from django.core import mail
@@ -18,6 +19,7 @@ from comments.models import Comment
     EMAIL_BACKEND='django.core.mail.backends.locmem.EmailBackend',
     CELERY_TASK_ALWAYS_EAGER=True,
 )
+# ZZC: 完整注册流程测试覆盖验证码获取、账号验证和重复邮箱拒绝。
 class CompleteUserRegistrationFlowTest(TestCase):
     """完整的用户注册流程集成测试"""
 
@@ -157,6 +159,7 @@ class CompleteUserRegistrationFlowTest(TestCase):
     EMAIL_BACKEND='django.core.mail.backends.locmem.EmailBackend',
     CELERY_TASK_ALWAYS_EAGER=True,
 )
+# ZZC: 密码重置测试覆盖有效与无效验证码两条关键分支。
 class CompletePasswordResetFlowTest(TestCase):
     """完整的密码重置流程集成测试"""
 
@@ -276,6 +279,7 @@ class CompletePasswordResetFlowTest(TestCase):
     EMAIL_BACKEND='django.core.mail.backends.locmem.EmailBackend',
     CELERY_TASK_ALWAYS_EAGER=True,
 )
+# ZZC: 评论通知流程测试覆盖首发评论、回复评论和评论审核设置。
 class CompleteCommentNotificationFlowTest(TestCase):
     """完整的评论通知流程集成测试"""
 
@@ -484,6 +488,7 @@ class CompleteCommentNotificationFlowTest(TestCase):
     EMAIL_BACKEND='django.core.mail.backends.locmem.EmailBackend',
     CELERY_TASK_ALWAYS_EAGER=True,
 )
+# ZZC: 用户生命周期测试串联注册、登录、发布内容等主要操作。
 class CompleteUserJourneyIntegrationTest(TestCase):
     """完整的用户旅程集成测试"""
 
