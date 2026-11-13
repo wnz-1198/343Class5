@@ -1,5 +1,6 @@
 # encoding: utf-8
 
+# ZZC: 本模块扩展 Haystack 的 Whoosh 后端，加入中文分词、高亮、查询和索引维护能力。
 from __future__ import absolute_import, division, print_function, unicode_literals
 
 import json
@@ -59,9 +60,11 @@ class WhooshHtmlFormatter(HtmlFormatter):
     We use it to have consistent results across backends. Specifically,
     Solr, Xapian and Elasticsearch are using this formatting.
     """
+    # ZZC: 固定高亮标签格式，使搜索结果与其他搜索后端保持一致。
     template = '<%(tag)s>%(t)s</%(tag)s>'
 
 
+# ZZC: WhooshSearchBackend 负责索引结构、读写、查询、分页、相关文章和结果优化。
 class WhooshSearchBackend(BaseSearchBackend):
     # Word reserved by Whoosh for special use.
     RESERVED_WORDS = (
@@ -79,6 +82,7 @@ class WhooshSearchBackend(BaseSearchBackend):
         '[', ']', '^', '"', '~', '*', '?', ':', '.',
     )
 
+    # ZZC: 初始化存储方式、索引路径和日志对象；文件存储模式必须提供 PATH。
     def __init__(self, connection_alias, **connection_options):
         super(
             WhooshSearchBackend,
@@ -103,6 +107,7 @@ class WhooshSearchBackend(BaseSearchBackend):
 
         self.log = logging.getLogger('haystack')
 
+    # ZZC: 首次使用时创建或打开索引，并根据 Haystack 搜索字段动态生成 schema。
     def setup(self):
         """
         Defers loading until needed.
@@ -144,6 +149,7 @@ class WhooshSearchBackend(BaseSearchBackend):
 
         self.setup_complete = True
 
+    # ZZC: 根据字段类型选择 Whoosh 字段类，普通文本默认使用 Jieba 中文分析器。
     def build_schema(self, fields):
         schema_fields = {
             ID: WHOOSH_ID(stored=True, unique=True),
@@ -199,6 +205,7 @@ class WhooshSearchBackend(BaseSearchBackend):
 
         return (content_field_name, Schema(**schema_fields))
 
+    # ZZC: 把 Django 模型转换为搜索文档并异步写入索引。
     def update(self, index, iterable, commit=True):
         if not self.setup_complete:
             self.setup()
@@ -244,6 +251,7 @@ class WhooshSearchBackend(BaseSearchBackend):
             # otherwise.
             writer.commit()
 
+    # ZZC: 将待删除对象转换为文档标识，并从索引中移除。
     def remove(self, obj_or_string, commit=True):
         if not self.setup_complete:
             self.setup()
@@ -266,6 +274,7 @@ class WhooshSearchBackend(BaseSearchBackend):
                 e,
                 exc_info=True)
 
+    # ZZC: 根据模型范围删除全部文档，用于重建索引前的清理。
     def clear(self, models=None, commit=True):
         if not self.setup_complete:
             self.setup()
@@ -303,6 +312,7 @@ class WhooshSearchBackend(BaseSearchBackend):
                 self.log.error(
                     "Failed to clear Whoosh index: %s", e, exc_info=True)
 
+    # ZZC: 删除索引目录和当前索引对象，并重置初始化状态。
     def delete_index(self):
         # Per the Whoosh mailing list, if wiping out everything from the index,
         # it's much more efficient to simply delete the index files.
@@ -314,6 +324,7 @@ class WhooshSearchBackend(BaseSearchBackend):
         # Recreate everything.
         self.setup()
 
+    # ZZC: 请求 Whoosh 合并索引段，减少碎片并改善查询效率。
     def optimize(self):
         if not self.setup_complete:
             self.setup()
@@ -321,6 +332,7 @@ class WhooshSearchBackend(BaseSearchBackend):
         self.index = self.index.refresh()
         self.index.optimize()
 
+    # ZZC: 将 Haystack 的起止偏移量换算为 Whoosh 页码和页大小。
     def calculate_page(self, start_offset=0, end_offset=None):
         # Prevent against Whoosh throwing an error. Requires an end_offset
         # greater than 0.
@@ -346,6 +358,7 @@ class WhooshSearchBackend(BaseSearchBackend):
         return page_num, page_length
 
     @log_query
+    # ZZC: 解析查询字符串、执行搜索、处理排序分页高亮和拼写建议。
     def search(
             self,
             query_string,
@@ -560,6 +573,7 @@ class WhooshSearchBackend(BaseSearchBackend):
                 'spelling_suggestion': spelling_suggestion,
             }
 
+    # ZZC: 使用当前文档内容查找相似文章，供推荐功能复用。
     def more_like_this(
             self,
             model_instance,
@@ -675,6 +689,7 @@ class WhooshSearchBackend(BaseSearchBackend):
 
         return results
 
+    # ZZC: 把 Whoosh 原始命中结果转换为 Haystack SearchResult 对象。
     def _process_results(
             self,
             raw_page,
@@ -816,6 +831,7 @@ class WhooshSearchBackend(BaseSearchBackend):
             'spelling_suggestion': spelling_suggestion,
         }
 
+    # ZZC: 使用正文字段生成搜索拼写建议或推荐词。
     def create_spelling_suggestion(self, query_string):
         spelling_suggestion = None
         reader = self.index.reader()
@@ -845,6 +861,7 @@ class WhooshSearchBackend(BaseSearchBackend):
         spelling_suggestion = ' '.join(suggested_words)
         return spelling_suggestion
 
+    # ZZC: 对 Python 值做序列化转换，确保 Whoosh 能正确保存字段内容。
     def _from_python(self, value):
         """
         Converts Python values to a string for Whoosh.
@@ -868,6 +885,7 @@ class WhooshSearchBackend(BaseSearchBackend):
             value = force_str(value)
         return value
 
+    # ZZC: 从索引读取字段后恢复为 Python 可处理的值。
     def _to_python(self, value):
         """
         Converts values from Whoosh to native Python values.
@@ -919,13 +937,16 @@ class WhooshSearchBackend(BaseSearchBackend):
         return value
 
 
+# ZZC: WhooshSearchQuery 负责查询字符串清理、字段片段构建和时间格式转换。
 class WhooshSearchQuery(BaseSearchQuery):
+    # ZZC: 将日期时间转换为 Whoosh 使用的字符串格式。
     def _convert_datetime(self, date):
         if hasattr(date, 'hour'):
             return force_str(date.strftime('%Y%m%d%H%M%S'))
         else:
             return force_str(date.strftime('%Y%m%d000000'))
 
+    # ZZC: 引用包含保留字符的词语，避免用户输入改变查询语法。
     def clean(self, query_fragment):
         """
         Provides a mechanism for sanitizing user input before presenting the
@@ -951,6 +972,7 @@ class WhooshSearchQuery(BaseSearchQuery):
 
         return ' '.join(cleaned_words)
 
+    # ZZC: 根据字段和过滤类型生成 Whoosh 查询片段。
     def build_query_fragment(self, field, filter_type, value):
         from haystack import connections
         query_frag = ''
@@ -1088,6 +1110,7 @@ class WhooshSearchQuery(BaseSearchQuery):
         #     value = self.backend._from_python(value)
 
 
+# ZZC: Engine 将自定义 Whoosh 后端和查询类接入 Haystack。
 class WhooshEngine(BaseEngine):
     backend = WhooshSearchBackend
     query = WhooshSearchQuery

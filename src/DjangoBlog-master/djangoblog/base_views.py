@@ -5,6 +5,7 @@
 Django Blog 基础视图类
 提供带有常用装饰器的视图基类，减少重复的 dispatch 方法定义
 """
+# ZZC: 本模块集中复用表单视图的安全装饰器，避免各业务视图重复配置。
 
 from django.contrib.auth.decorators import login_required
 from django.utils.decorators import method_decorator
@@ -14,6 +15,7 @@ from django.views.decorators.debug import sensitive_post_parameters
 from django.views.generic import FormView, RedirectView
 
 
+# ZZC: SecureFormView 为普通表单视图统一增加 CSRF 校验。
 class SecureFormView(FormView):
     """
     安全的 FormView 基类
@@ -30,12 +32,14 @@ class SecureFormView(FormView):
                 return super().form_valid(form)
     """
 
+    # ZZC: csrf_protect 会验证客户端提交的表单令牌，拦截伪造请求。
     @method_decorator(csrf_protect)
     def dispatch(self, *args, **kwargs):
         """添加 CSRF 保护"""
         return super().dispatch(*args, **kwargs)
 
 
+# ZZC: AuthenticatedFormView 在 SecureFormView 的基础上要求用户先登录。
 class AuthenticatedFormView(FormView):
     """
     需要登录的 FormView
@@ -49,6 +53,7 @@ class AuthenticatedFormView(FormView):
             template_name = 'my_form.html'
     """
 
+    # ZZC: 多个装饰器按声明顺序组合，最终同时执行登录检查和 CSRF 校验。
     @method_decorator(login_required)
     @method_decorator(csrf_protect)
     def dispatch(self, *args, **kwargs):
@@ -56,6 +61,7 @@ class AuthenticatedFormView(FormView):
         return super().dispatch(*args, **kwargs)
 
 
+# ZZC: LoginFormView 面向登录场景，额外保护密码参数并禁止缓存响应。
 class LoginFormView(FormView):
     """
     登录专用 FormView
@@ -75,6 +81,7 @@ class LoginFormView(FormView):
                 return super().form_valid(form)
     """
 
+    # ZZC: 从调试和日志中隐藏 password 参数，降低凭据泄露风险。
     @method_decorator(sensitive_post_parameters('password'))
     @method_decorator(csrf_protect)
     @method_decorator(never_cache)
@@ -83,6 +90,7 @@ class LoginFormView(FormView):
         return super().dispatch(request, *args, **kwargs)
 
 
+# ZZC: LogoutRedirectView 禁止浏览器缓存登出跳转，避免用户退出后返回旧页面。
 class LogoutRedirectView(RedirectView):
     """
     登出专用 RedirectView
@@ -98,12 +106,14 @@ class LogoutRedirectView(RedirectView):
                 return super().get(request, *args, **kwargs)
     """
 
+    # ZZC: 所有登出请求都不应被缓存，确保认证状态立即失效。
     @method_decorator(never_cache)
     def dispatch(self, request, *args, **kwargs):
         """禁用缓存"""
         return super().dispatch(request, *args, **kwargs)
 
 
+# ZZC: NoCacheFormView 适用于验证码等必须实时生成内容的表单页面。
 class NoCacheFormView(FormView):
     """
     禁用缓存的 FormView
@@ -116,6 +126,7 @@ class NoCacheFormView(FormView):
             template_name = 'my_form.html'
     """
 
+    # ZZC: 关闭响应缓存后再执行 CSRF 保护，保证每次提交都进入服务端校验。
     @method_decorator(never_cache)
     @method_decorator(csrf_protect)
     def dispatch(self, request, *args, **kwargs):

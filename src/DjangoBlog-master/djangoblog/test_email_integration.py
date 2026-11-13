@@ -3,6 +3,7 @@ Email Integration Tests
 邮件集成测试 - 测试完整的邮件发送流程
 包括：注册验证、密码重置、评论通知等
 """
+# ZZC: 本模块验证注册、找回密码、评论通知和邮件内容的集成行为。
 import re
 from django.test import TestCase, Client, override_settings
 from django.core import mail
@@ -18,6 +19,7 @@ from comments.models import Comment
     EMAIL_BACKEND='django.core.mail.backends.locmem.EmailBackend',
     CELERY_TASK_ALWAYS_EAGER=True,  # 立即执行异步任务
 )
+# ZZC: 注册邮件测试覆盖发送、链接内容、重复注册以及多用户相互独立。
 class UserRegistrationEmailTest(TestCase):
     """测试用户注册邮件验证完整流程"""
 
@@ -124,6 +126,7 @@ class UserRegistrationEmailTest(TestCase):
     EMAIL_BACKEND='django.core.mail.backends.locmem.EmailBackend',
     CELERY_TASK_ALWAYS_EAGER=True,
 )
+# ZZC: 找回密码测试验证重置邮件、验证码和不存在邮箱时的处理。
 class PasswordResetEmailTest(TestCase):
     """测试密码重置邮件流程"""
 
@@ -227,6 +230,7 @@ class PasswordResetEmailTest(TestCase):
     EMAIL_BACKEND='django.core.mail.backends.locmem.EmailBackend',
     CELERY_TASK_ALWAYS_EAGER=True,
 )
+# ZZC: 评论通知测试验证文章作者、父评论作者和审核配置对邮件的影响。
 class CommentNotificationEmailTest(TestCase):
     """测试评论通知邮件流程"""
 
@@ -402,6 +406,7 @@ class CommentNotificationEmailTest(TestCase):
     EMAIL_BACKEND='django.core.mail.backends.locmem.EmailBackend',
     CELERY_TASK_ALWAYS_EAGER=True,
 )
+# ZZC: 工作流测试将多个邮件场景串联，验证异步发送不阻塞主业务。
 class EmailIntegrationWorkflowTest(TestCase):
     """测试完整的邮件工作流集成"""
 
@@ -521,6 +526,7 @@ class EmailIntegrationWorkflowTest(TestCase):
 @override_settings(
     EMAIL_BACKEND='django.core.mail.backends.locmem.EmailBackend',
 )
+# ZZC: 邮件内容测试检查发件人、主题、正文和收件人是否符合预期。
 class EmailContentValidationTest(TestCase):
     """测试邮件内容验证"""
 

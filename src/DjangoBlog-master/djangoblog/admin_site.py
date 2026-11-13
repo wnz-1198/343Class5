@@ -1,3 +1,4 @@
+# ZZC: 本模块组装项目自定义后台站点，并集中注册各业务 App 的管理模型。
 from django.contrib.admin import AdminSite
 from django.contrib.admin.models import LogEntry
 from django.contrib.sites.admin import SiteAdmin
@@ -15,13 +16,16 @@ from servermanager.admin import *
 from servermanager.models import *
 
 
+# ZZC: DjangoBlogAdminSite 只允许超级管理员进入自定义后台。
 class DjangoBlogAdminSite(AdminSite):
     site_header = 'djangoblog administration'
     site_title = 'djangoblog site admin'
 
+    # ZZC: 保留父类初始化流程，同时使用固定后台名称隔离默认 AdminSite。
     def __init__(self, name='admin'):
         super().__init__(name)
 
+    # ZZC: 权限判断直接要求 is_superuser，避免普通员工账号访问核心后台。
     def has_permission(self, request):
         return request.user.is_superuser
 
@@ -36,8 +40,10 @@ class DjangoBlogAdminSite(AdminSite):
     #     return urls + my_urls
 
 
+# ZZC: 创建全局后台实例后，由 urls.py 把该实例挂载到 /admin/。
 admin_site = DjangoBlogAdminSite(name='admin')
 
+# ZZC: 以下注册把文章、分类、标签、用户、评论、OAuth 和运维模型加入自定义后台。
 admin_site.register(Article, ArticlelAdmin)
 admin_site.register(Category, CategoryAdmin)
 admin_site.register(Tag, TagAdmin)

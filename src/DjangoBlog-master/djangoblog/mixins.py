@@ -5,6 +5,7 @@
 Django Blog 混入类 (Mixins)
 提供可复用的功能模块，减少代码重复
 """
+# ZZC: 本模块提供时间戳、缓存、分页和文章查询等可复用视图能力。
 
 import logging
 from django.db import models
@@ -17,6 +18,7 @@ logger = logging.getLogger(__name__)
 
 # ===== 模型层 Mixin =====
 
+# ZZC: TimeStampedModel 为业务模型统一提供创建时间和最后修改时间。
 class TimeStampedModel(models.Model):
     """
     抽象模型：为所有模型提供统一的时间戳字段
@@ -45,6 +47,7 @@ class TimeStampedModel(models.Model):
         ordering = ['-created_at']
         get_latest_by = 'created_at'
 
+    # ZZC: 保存前自动刷新 updated_at；部分更新时也会把它补入 update_fields。
     def save(self, *args, **kwargs):
         """
         重写 save 方法，自动更新 updated_at 字段
@@ -67,6 +70,7 @@ class TimeStampedModel(models.Model):
 
 # ===== 视图层 Mixin =====
 
+# ZZC: SlugCachedMixin 在单次视图实例中缓存 slug 查询结果，减少重复数据库访问。
 class SlugCachedMixin:
     """
     Mixin: 缓存 slug 查询结果，避免重复数据库查询
@@ -90,6 +94,7 @@ class SlugCachedMixin:
     slug_url_kwarg = 'slug'
     slug_model = None
 
+    # ZZC: 首次调用查询对象并写入实例属性，后续调用直接复用缓存结果。
     def get_slug_object(self):
         """
         获取并缓存 slug 对应的对象
@@ -115,6 +120,7 @@ class SlugCachedMixin:
         return self._slug_object
 
 
+# ZZC: OptimizedArticleQueryMixin 预加载文章关联数据，避免模板循环触发 N+1 查询。
 class OptimizedArticleQueryMixin:
     """
     Mixin: 优化文章查询（预加载关联对象）
@@ -128,6 +134,7 @@ class OptimizedArticleQueryMixin:
                 return self.get_optimized_article_queryset().filter(status='p')
     """
 
+    # ZZC: 外键使用 select_related，多对多标签使用 prefetch_related。
     def get_optimized_article_queryset(self):
         """
         返回优化后的 Article queryset
@@ -152,6 +159,7 @@ class OptimizedArticleQueryMixin:
         )
 
 
+# ZZC: CachedListViewMixin 约定由子类提供缓存键和数据来源。
 class CachedListViewMixin:
     """
     Mixin: 为 ListView 提供统一的缓存逻辑
@@ -168,6 +176,7 @@ class CachedListViewMixin:
                 return Article.objects.filter(status='p')
     """
 
+    # ZZC: 抽象缓存键接口，子类必须根据查询条件实现，避免不同页面共用错误缓存。
     def get_queryset_cache_key(self):
         """
         子类实现：返回缓存 key
@@ -182,6 +191,7 @@ class CachedListViewMixin:
             f'{self.__class__.__name__} must implement get_queryset_cache_key()'
         )
 
+    # ZZC: 抽象数据接口，子类在此返回真正需要缓存的 QuerySet。
     def get_queryset_data(self):
         """
         子类实现：返回实际数据
@@ -196,6 +206,7 @@ class CachedListViewMixin:
             f'{self.__class__.__name__} must implement get_queryset_data()'
         )
 
+    # ZZC: 优先读取缓存；未命中时查询数据库并回写缓存。
     def get_queryset_from_cache(self, cache_key):
         """
         从缓存获取 queryset，如果缓存不存在则查询并缓存
@@ -218,6 +229,7 @@ class CachedListViewMixin:
         logger.info(f'Cache MISS: {cache_key}')
         return queryset
 
+    # ZZC: ListView 请求 QuerySet 时统一经过缓存层。
     def get_queryset(self):
         """
         重写 get_queryset，使用缓存
@@ -229,6 +241,7 @@ class CachedListViewMixin:
         return self.get_queryset_from_cache(key)
 
 
+# ZZC: PageNumberMixin 把分页参数转换为安全的正整数。
 class PageNumberMixin:
     """
     Mixin: 提供页码获取功能
@@ -242,6 +255,7 @@ class PageNumberMixin:
     """
     page_kwarg = 'page'
 
+    # ZZC: 优先读取 URL 参数，其次读取查询字符串，非法值统一回退到第一页。
     @property
     def page_number(self):
         """
@@ -261,6 +275,7 @@ class PageNumberMixin:
             return 1
 
 
+# ZZC: ArticleListMixin 组合文章查询优化、列表缓存和页码解析三项能力。
 class ArticleListMixin(
     OptimizedArticleQueryMixin,
     CachedListViewMixin,
