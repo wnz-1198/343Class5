@@ -1,5 +1,5 @@
 # ZZC: 本模块用 Django Signal 处理邮件、OAuth 头像和模型保存后的缓存失效。
-import _thread
+import threading
 import logging
 
 import django.dispatch
@@ -118,8 +118,12 @@ def model_post_save_callback(
             delete_sidebar_cache()
             cache.delete('seo_processor')
 
-            # ZZC: 邮件发送放入独立线程，避免 SMTP 延迟阻塞评论保存请求。
-            _thread.start_new_thread(send_comment_email, (instance,))
+            # ZZC: 邮件发送放入守护线程，避免 SMTP 延迟阻塞评论保存请求。
+            threading.Thread(
+                target=send_comment_email,
+                args=(instance,),
+                daemon=True,
+            ).start()
 
     # ZZC: 文章、分类和标签分别影响不同页面，使用最小范围删除以保留其他缓存。
     elif 'get_full_url' in dir(instance):

@@ -14,7 +14,8 @@ class SpiderNotify():
     def baidu_notify(urls):
         try:
             data = '\n'.join(urls)
-            result = requests.post(settings.BAIDU_NOTIFY_URL, data=data)
+            # ZZC: 设置超时，避免搜索引擎接口不可用时长阻塞业务请求。
+            result = requests.post(settings.BAIDU_NOTIFY_URL, data=data, timeout=5)
             logger.info(result.text)
         except Exception as e:
             logger.error(e)
@@ -22,4 +23,5 @@ class SpiderNotify():
     # ZZC: notify() 是统一调用入口，后续可在这里扩展其他搜索引擎。
     @staticmethod
     def notify(url):
-        SpiderNotify.baidu_notify(url)
+        # ZZC: baidu_notify 接收 URL 列表；包装单个 URL，避免字符串被逐字符拆开。
+        SpiderNotify.baidu_notify([url])

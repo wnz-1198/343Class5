@@ -221,7 +221,8 @@ class CachedListViewMixin:
         from djangoblog.utils import cache
 
         value = cache.get(cache_key)
-        if value:
+        # ZZC: 空列表也是有效查询结果，只有 None 才表示缓存未命中。
+        if value is not None:
             logger.info(f'Cache HIT: {cache_key}')
             return value
 
