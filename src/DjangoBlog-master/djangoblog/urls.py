@@ -23,12 +23,17 @@ from django.urls import re_path
 from haystack.views import search_view_factory
 from django.http import JsonResponse
 import time
+import logging
 
 from blog.views import EsSearchView
 from djangoblog.admin_site import admin_site
 from djangoblog.elasticsearch_backend import ElasticSearchModelSearchForm
 from djangoblog.feeds import DjangoBlogFeed
 from djangoblog.sitemap import ArticleSiteMap, CategorySiteMap, StaticViewSitemap, TagSiteMap, UserSiteMap
+from django.core.cache import cache
+from django.db import connection
+
+logger = logging.getLogger(__name__)
 
 # ZZC: 站点地图需同时覆盖文章、分类、标签、作者和静态首页，便于搜索引擎发现内容。
 sitemaps = {
@@ -46,16 +51,39 @@ handler500 = 'blog.views.server_error_view'
 handle403 = 'blog.views.permission_denied_view'
 
 
-# ZZC: 健康检查只返回服务状态和服务器时间，供部署平台判断应用是否存活。
 def health_check(request):
-    """
-    健康检查接口
-    简单返回服务健康状态
-    """
-    return JsonResponse({
-        'status': 'healthy',
-        'timestamp': time.time()
-    })
+    #SJL: 健康检查探测数据库和缓存；任一关键依赖失败时返回 503，避免误报健康。
+    checks = {
+        'database': 'ok',
+        'cache': 'ok',
+    }
+
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute('SELECT 1')
+            cursor.fetchone()
+    except Exception:
+        checks['database'] = 'error'
+        logger.exception('Health check database probe failed')
+
+    probe_key = 'djangoblog_health_probe'
+    try:
+        cache.set(probe_key, 'ok', 10)
+        if cache.get(probe_key) != 'ok':
+            raise RuntimeError('Cache probe value mismatch')
+    except Exception:
+        checks['cache'] = 'error'
+        logger.exception('Health check cache probe failed')
+
+    healthy = all(value == 'ok' for value in checks.values())
+    return JsonResponse(
+        {
+            'status': 'healthy' if healthy else 'unhealthy',
+            'checks': checks,
+            'timestamp': time.time(),
+        },
+        status=200 if healthy else 503,
+    )
 
 # ZZC: 不参与国际化前缀的接口入口，适合健康检查等基础设施路由。
 urlpatterns = [

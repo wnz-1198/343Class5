@@ -94,6 +94,16 @@
                                     {{ tag.name }}
                                 </a>
                             {% endfor %}
+                            {% if article.status == 'p' or user == article.author or user.is_superuser %}
+                                <a href="{% url 'blog:export_markdown' year=article.creation_time.year month=article.creation_time.month day=article.creation_time.day article_id=article.pk %}"
+                                   download
+                                   class="ml-auto inline-flex items-center gap-1.5 rounded-md border border-border px-3 py-1.5 text-xs font-medium text-foreground/80 transition-colors hover:border-primary/30 hover:text-primary">
+                                    <svg class="size-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v11m0 0l-4-4m4 4l4-4M5 19h14"/>
+                                    </svg>
+                                    导出 Markdown
+                                </a>
+                            {% endif %}
                         </div>
 
                         {# Prev/Next Navigation #}

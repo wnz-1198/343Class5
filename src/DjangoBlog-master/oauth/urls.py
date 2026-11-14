@@ -1,9 +1,11 @@
+#SJL: OAuth 路由模块，覆盖授权跳转、邮箱补充、邮件确认和绑定成功页。
 from django.urls import path
 
 from . import views
 
 app_name = "oauth"
 urlpatterns = [
+    #SJL: 命名空间 oauth 用于模板和视图反向解析，避免与其他 App 路由冲突。
     path(
         r'oauth/authorize',
         views.authorize),

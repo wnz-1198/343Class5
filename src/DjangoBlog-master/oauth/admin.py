@@ -1,3 +1,4 @@
+#SJL: OAuth 后台管理模块，用于查看绑定用户和配置各平台接入参数。
 import logging
 
 from django.contrib import admin
@@ -9,6 +10,7 @@ logger = logging.getLogger(__name__)
 
 
 class OAuthUserAdmin(admin.ModelAdmin):
+    #SJL: OAuth 绑定记录只读，避免管理员误改 openid 或 token 造成账户错绑。
     search_fields = ('nickname', 'email')
     list_per_page = 20
     list_display = (
@@ -50,5 +52,6 @@ class OAuthUserAdmin(admin.ModelAdmin):
 
 
 class OAuthConfigAdmin(admin.ModelAdmin):
+    #SJL: AppKey/AppSecret 由管理员在后台维护，普通用户不可访问。
     list_display = ('type', 'appkey', 'appsecret', 'is_enable')
     list_filter = ('type',)

@@ -1,3 +1,4 @@
+#SJL: OAuth 管理器模块，将微博、Google、GitHub、Facebook 和 QQ 的差异封装为统一接口。
 import json
 import logging
 import os
@@ -13,12 +14,14 @@ logger = logging.getLogger(__name__)
 
 
 class OAuthAccessTokenException(Exception):
+    #SJL: 授权码换 token 失败时抛出该业务异常，由视图转换为用户可理解的结果。
     '''
     oauth授权失败异常
     '''
 
 
 class BaseOauthManager(metaclass=ABCMeta):
+    #SJL: 统一各平台授权 URL、token 获取和用户信息解析协议。
     """获取用户授权"""
     AUTH_URL = None
     """获取token"""
@@ -57,21 +60,25 @@ class BaseOauthManager(metaclass=ABCMeta):
         pass
 
     def do_get(self, url, params, headers=None):
-        rsp = requests.get(url=url, params=params, headers=headers)
-        logger.info(rsp.text)
+        #SJL: 外部请求必须设置超时；日志只记录状态码，不输出可能含 token 的响应正文。
+        rsp = requests.get(url=url, params=params, headers=headers, timeout=10)
+        logger.debug('OAuth GET %s status=%s', url, rsp.status_code)
         return rsp.text
 
     def do_post(self, url, params, headers=None):
-        rsp = requests.post(url, params, headers=headers)
-        logger.info(rsp.text)
+        #SJL: POST 同样限制 10 秒超时，避免第三方平台无响应时占满工作线程。
+        rsp = requests.post(url, params, headers=headers, timeout=10)
+        logger.debug('OAuth POST %s status=%s', url, rsp.status_code)
         return rsp.text
 
     def get_config(self):
+        #SJL: 管理器按 ICON_NAME 读取唯一平台配置，未配置时使用空参数并交由流程处理。
         value = OAuthConfig.objects.filter(type=self.ICON_NAME)
         return value[0] if value else None
 
 
 class WBOauthManager(BaseOauthManager):
+    #SJL: 微博平台适配器。
     AUTH_URL = 'https://api.weibo.com/oauth2/authorize'
     TOKEN_URL = 'https://api.weibo.com/oauth2/access_token'
     API_URL = 'https://api.weibo.com/2/users/show.json'
@@ -147,6 +154,7 @@ class WBOauthManager(BaseOauthManager):
 
 
 class ProxyManagerMixin:
+    #SJL: 为支持代理的平台统一附加 HTTP_PROXY 配置。
     def __init__(self, *args, **kwargs):
         if os.environ.get("HTTP_PROXY"):
             self.proxies = {
@@ -157,17 +165,32 @@ class ProxyManagerMixin:
             self.proxies = None
 
     def do_get(self, url, params, headers=None):
-        rsp = requests.get(url=url, params=params, headers=headers, proxies=self.proxies)
-        logger.info(rsp.text)
+        #SJL: 外部 GET 设置超时，并且不记录响应正文中的身份信息。
+        rsp = requests.get(
+            url=url,
+            params=params,
+            headers=headers,
+            proxies=self.proxies,
+            timeout=10,
+        )
+        logger.debug('OAuth proxy GET %s status=%s', url, rsp.status_code)
         return rsp.text
 
     def do_post(self, url, params, headers=None):
-        rsp = requests.post(url, params, headers=headers, proxies=self.proxies)
-        logger.info(rsp.text)
+        #SJL: 外部 POST 设置超时，避免 OAuth 回调请求无限等待。
+        rsp = requests.post(
+            url,
+            params,
+            headers=headers,
+            proxies=self.proxies,
+            timeout=10,
+        )
+        logger.debug('OAuth proxy POST %s status=%s', url, rsp.status_code)
         return rsp.text
 
 
 class GoogleOauthManager(ProxyManagerMixin, BaseOauthManager):
+    #SJL: Google OAuth 适配器，邮箱权限使用 openid email scope。
     AUTH_URL = 'https://accounts.google.com/o/oauth2/v2/auth'
     TOKEN_URL = 'https://www.googleapis.com/oauth2/v4/token'
     API_URL = 'https://www.googleapis.com/oauth2/v3/userinfo'
@@ -246,6 +269,7 @@ class GoogleOauthManager(ProxyManagerMixin, BaseOauthManager):
 
 
 class GitHubOauthManager(ProxyManagerMixin, BaseOauthManager):
+    #SJL: GitHub 适配器公开邮箱缺失时再访问 user/emails 获取已验证邮箱。
     AUTH_URL = 'https://github.com/login/oauth/authorize'
     TOKEN_URL = 'https://github.com/login/oauth/access_token'
     API_URL = 'https://api.github.com/user'
@@ -339,6 +363,7 @@ class GitHubOauthManager(ProxyManagerMixin, BaseOauthManager):
 
 
 class FaceBookOauthManager(ProxyManagerMixin, BaseOauthManager):
+    #SJL: Facebook Graph API 适配器。
     AUTH_URL = 'https://www.facebook.com/v16.0/dialog/oauth'
     TOKEN_URL = 'https://graph.facebook.com/v16.0/oauth/access_token'
     API_URL = 'https://graph.facebook.com/me'
@@ -413,6 +438,7 @@ class FaceBookOauthManager(ProxyManagerMixin, BaseOauthManager):
 
 
 class QQOauthManager(BaseOauthManager):
+    #SJL: QQ 适配器需要先解析 openid，再组合用户信息请求。
     AUTH_URL = 'https://graph.qq.com/oauth2.0/authorize'
     TOKEN_URL = 'https://graph.qq.com/oauth2.0/token'
     API_URL = 'https://graph.qq.com/user/get_user_info'
@@ -503,6 +529,7 @@ class QQOauthManager(BaseOauthManager):
 
 @cache_decorator(expiration=100 * 60)
 def get_oauth_apps():
+    #SJL: 只实例化已启用且存在配置的平台，结果缓存减少后台读取。
     configs = OAuthConfig.objects.filter(is_enable=True).all()
     if not configs:
         return []
@@ -513,6 +540,7 @@ def get_oauth_apps():
 
 
 def get_manager_by_type(type):
+    #SJL: 平台类型大小写不敏感；未知平台返回 None 由调用方安全跳转。
     applications = get_oauth_apps()
     if applications:
         finds = list(

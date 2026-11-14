@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1900" height="1460" viewBox="0 0 1900 1460">
+  <defs>
+    <marker id="arrow" markerWidth="13" markerHeight="13" refX="10" refY="6.5" orient="auto">
+      <path d="M0,0 L13,6.5 L0,13 Z" fill="#2563eb"/>
+    </marker>
+    <marker id="back" markerWidth="13" markerHeight="13" refX="3" refY="6.5" orient="auto">
+      <path d="M13,0 L0,6.5 L13,13 Z" fill="#059669"/>
+    </marker>
+    <style>
+      .bg { fill: #fff; }
+      .head { fill: #0f172a; }
+      .title { font: 700 38px "Microsoft YaHei", sans-serif; fill: white; }
+      .sub { font: 400 18px "Microsoft YaHei", sans-serif; fill: #cbd5e1; }
+      .panel { fill: #f8fafc; stroke: #cbd5e1; stroke-width: 2; rx: 24; }
+      .panel-title { font: 700 22px "Microsoft YaHei", sans-serif; fill: #0f172a; }
+      .lifeline { stroke: #94a3b8; stroke-width: 2; stroke-dasharray: 7 7; }
+      .actor { fill: white; stroke: #2563eb; stroke-width: 2.3; rx: 12; }
+      .actor-text { font: 700 15px "Microsoft YaHei", sans-serif; fill: #0f172a; text-anchor: middle; }
+      .call { stroke: #2563eb; stroke-width: 2.3; fill: none; marker-end: url(#arrow); }
+      .return { stroke: #059669; stroke-width: 2.1; fill: none; stroke-dasharray: 7 5; marker-end: url(#back); }
+      .msg { font: 400 14px "Microsoft YaHei", sans-serif; fill: #1e3a8a; }
+      .ret { font: 400 14px "Microsoft YaHei", sans-serif; fill: #047857; }
+    </style>
+  </defs>
+  <rect width="1900" height="1460" class="bg"/>
+  <rect width="1900" height="120" class="head"/>
+  <text x="58" y="54" class="title">DjangoBlog 主要用例顺序图</text>
+  <text x="58" y="91" class="sub">浏览文章 · 登录评论 · 评论审核 · OAuth 登录</text>
+
+  <g transform="translate(45 150)">
+    <rect width="885" height="570" class="panel"/>
+    <text x="28" y="42" class="panel-title">用例 1：游客浏览文章</text>
+    <line x1="120" y1="88" x2="120" y2="535" class="lifeline"/>
+    <line x1="325" y1="88" x2="325" y2="535" class="lifeline"/>
+    <line x1="545" y1="88" x2="545" y2="535" class="lifeline"/>
+    <line x1="760" y1="88" x2="760" y2="535" class="lifeline"/>
+    <rect x="45" y="62" width="150" height="48" class="actor"/><text x="120" y="92" class="actor-text">Browser</text>
+    <rect x="250" y="62" width="150" height="48" class="actor"/><text x="325" y="92" class="actor-text">URL / View</text>
+    <rect x="470" y="62" width="150" height="48" class="actor"/><text x="545" y="92" class="actor-text">ORM / Cache</text>
+    <rect x="685" y="62" width="150" height="48" class="actor"/><text x="760" y="92" class="actor-text">Template</text>
+    <path d="M120 140 H325" class="call"/><text x="145" y="132" class="msg">GET /article/...</text>
+    <path d="M325 180 H545" class="call"/><text x="350" y="172" class="msg">查询文章与评论</text>
+    <path d="M545 225 H325" class="return"/><text x="350" y="217" class="ret">Article / Comment</text>
+    <path d="M325 270 H760" class="call"/><text x="350" y="262" class="msg">渲染 details</text>
+    <path d="M760 315 H325" class="return"/><text x="660" y="307" class="ret">HTML context</text>
+    <path d="M325 370 H120" class="return"/><text x="160" y="362" class="ret">HTTP 200 HTML</text>
+    <rect x="120" y="410" width="640" height="72" fill="#eff6ff" stroke="#93c5fd" rx="12"/>
+    <text x="140" y="439" class="msg">可选：点击“导出 Markdown”</text>
+    <text x="140" y="464" class="msg">→ 权限校验 → text/markdown 附件</text>
+  </g>
+
+  <g transform="translate(970 150)">
+    <rect width="885" height="570" class="panel"/>
+    <text x="28" y="42" class="panel-title">用例 2：登录用户发表评论</text>
+    <line x1="115" y1="88" x2="115" y2="535" class="lifeline"/>
+    <line x1="315" y1="88" x2="315" y2="535" class="lifeline"/>
+    <line x1="520" y1="88" x2="520" y2="535" class="lifeline"/>
+    <line x1="735" y1="88" x2="735" y2="535" class="lifeline"/>
+    <rect x="40" y="62" width="150" height="48" class="actor"/><text x="115" y="92" class="actor-text">User</text>
+    <rect x="240" y="62" width="150" height="48" class="actor"/><text x="315" y="92" class="actor-text">Comment View</text>
+    <rect x="445" y="62" width="150" height="48" class="actor"/><text x="520" y="92" class="actor-text">Form / Model</text>
+    <rect x="660" y="62" width="150" height="48" class="actor"/><text x="735" y="92" class="actor-text">Signal / Mail</text>
+    <path d="M115 140 H315" class="call"/><text x="140" y="132" class="msg">POST 评论 + CSRF</text>
+    <path d="M315 180 H520" class="call"/><text x="340" y="172" class="msg">校验并保存</text>
+    <path d="M520 225 H315" class="return"/><text x="340" y="217" class="ret">Comment</text>
+    <path d="M315 270 H735" class="call"/><text x="340" y="262" class="msg">清理缓存 / 异步通知</text>
+    <path d="M735 315 H315" class="return"/><text x="635" y="307" class="ret">完成</text>
+    <path d="M315 370 H115" class="return"/><text x="150" y="362" class="ret">302 / JSON 结果</text>
+    <rect x="115" y="410" width="665" height="72" fill="#eff6ff" stroke="#93c5fd" rx="12"/>
+    <text x="135" y="439" class="msg">审核关闭：is_enable=True，立即展示</text>
+    <text x="135" y="464" class="msg">审核开启：is_enable=False，等待管理员处理</text>
+  </g>
+
+  <g transform="translate(45 760)">
+    <rect width="885" height="550" class="panel"/>
+    <text x="28" y="42" class="panel-title">用例 3：管理员审核评论</text>
+    <line x1="115" y1="88" x2="115" y2="520" class="lifeline"/>
+    <line x1="300" y1="88" x2="300" y2="520" class="lifeline"/>
+    <line x1="500" y1="88" x2="500" y2="520" class="lifeline"/>
+    <line x1="710" y1="88" x2="710" y2="520" class="lifeline"/>
+    <rect x="40" y="62" width="150" height="48" class="actor"/><text x="115" y="92" class="actor-text">Admin</text>
+    <rect x="225" y="62" width="150" height="48" class="actor"/><text x="300" y="92" class="actor-text">Admin UI</text>
+    <rect x="425" y="62" width="150" height="48" class="actor"/><text x="500" y="92" class="actor-text">Comment Model</text>
+    <rect x="635" y="62" width="150" height="48" class="actor"/><text x="710" y="92" class="actor-text">Cache</text>
+    <path d="M115 140 H300" class="call"/><text x="140" y="132" class="msg">选择启用 / 禁用</text>
+    <path d="M300 180 H500" class="call"/><text x="325" y="172" class="msg">批量更新状态</text>
+    <path d="M500 225 H710" class="call"/><text x="525" y="217" class="msg">失效文章评论缓存</text>
+    <path d="M710 270 H500" class="return"/><text x="610" y="262" class="ret">完成</text>
+    <path d="M500 315 H300" class="return"/><text x="350" y="307" class="ret">保存结果</text>
+    <path d="M300 360 H115" class="return"/><text x="150" y="352" class="ret">成功消息</text>
+    <rect x="115" y="410" width="650" height="80" fill="#f0fdf4" stroke="#86efac" rx="12"/>
+    <text x="135" y="441" class="msg">前台下一次请求重新读取已启用评论</text>
+    <text x="135" y="467" class="msg">审核结果与文章统计保持一致</text>
+  </g>
+
+  <g transform="translate(970 760)">
+    <rect width="885" height="550" class="panel"/>
+    <text x="28" y="42" class="panel-title">用例 4：第三方 OAuth 登录</text>
+    <line x1="115" y1="88" x2="115" y2="520" class="lifeline"/>
+    <line x1="305" y1="88" x2="305" y2="520" class="lifeline"/>
+    <line x1="500" y1="88" x2="500" y2="520" class="lifeline"/>
+    <line x1="715" y1="88" x2="715" y2="520" class="lifeline"/>
+    <rect x="40" y="62" width="150" height="48" class="actor"/><text x="115" y="92" class="actor-text">User</text>
+    <rect x="230" y="62" width="150" height="48" class="actor"/><text x="305" y="92" class="actor-text">OAuth View</text>
+    <rect x="425" y="62" width="150" height="48" class="actor"/><text x="500" y="92" class="actor-text">Provider</text>
+    <rect x="640" y="62" width="150" height="48" class="actor"/><text x="715" y="92" class="actor-text">BlogUser / OAuthUser</text>
+    <path d="M115 140 H305" class="call"/><text x="140" y="132" class="msg">点击 OAuth 登录</text>
+    <path d="M305 180 H500" class="call"/><text x="330" y="172" class="msg">授权请求</text>
+    <path d="M500 225 H305" class="return"/><text x="345" y="217" class="ret">code / user info</text>
+    <path d="M305 270 H715" class="call"/><text x="330" y="262" class="msg">绑定或创建本地用户</text>
+    <path d="M715 315 H305" class="return"/><text x="620" y="307" class="ret">BlogUser</text>
+    <path d="M305 360 H115" class="return"/><text x="345" y="352" class="ret">建立会话并跳转</text>
+    <rect x="115" y="410" width="650" height="80" fill="#fff7ed" stroke="#fdba74" rx="12"/>
+    <text x="135" y="441" class="msg">回调地址、AppKey、AppSecret 由 OAuthConfig 管理</text>
+    <text x="135" y="467" class="msg">外部调用失败时记录日志并返回可理解的错误页</text>
+  </g>
+</svg>

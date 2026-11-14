@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1800" height="960" viewBox="0 0 1800 960">
+  <defs>
+    <marker id="arrow" markerWidth="14" markerHeight="14" refX="11" refY="7" orient="auto">
+      <path d="M0,0 L14,7 L0,14 Z" fill="#2563eb"/>
+    </marker>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="4" stdDeviation="7" flood-color="#0f172a" flood-opacity="0.12"/>
+    </filter>
+    <style>
+      .bg { fill: #fff; }
+      .head { fill: #0f172a; }
+      .title { font: 700 38px "Microsoft YaHei", sans-serif; fill: white; }
+      .sub { font: 400 18px "Microsoft YaHei", sans-serif; fill: #cbd5e1; }
+      .process { fill: #eff6ff; stroke: #2563eb; stroke-width: 2.5; rx: 60; }
+      .store { fill: #f0fdf4; stroke: #16a34a; stroke-width: 2.5; }
+      .external { fill: #fff7ed; stroke: #ea580c; stroke-width: 2.5; rx: 20; }
+      .actor { fill: #f8fafc; stroke: #64748b; stroke-width: 2.5; rx: 16; }
+      .label { font: 700 20px "Microsoft YaHei", sans-serif; fill: #0f172a; text-anchor: middle; }
+      .small { font: 400 15px "Microsoft YaHei", sans-serif; fill: #475569; text-anchor: middle; }
+      .flow { fill: none; stroke: #2563eb; stroke-width: 2.8; marker-end: url(#arrow); }
+      .flow-text { font: 400 15px "Microsoft YaHei", sans-serif; fill: #1d4ed8; }
+    </style>
+  </defs>
+  <rect width="1800" height="960" class="bg"/>
+  <rect width="1800" height="120" class="head"/>
+  <text x="58" y="54" class="title">DjangoBlog 一级数据流图</text>
+  <text x="58" y="91" class="sub">用户请求、身份认证、内容处理、数据持久化与外部服务</text>
+
+  <g filter="url(#shadow)">
+    <rect x="55" y="215" width="210" height="130" class="actor"/>
+    <text x="160" y="268" class="label">游客 / 用户</text>
+    <text x="160" y="300" class="small">浏览、登录、评论</text>
+  </g>
+  <g filter="url(#shadow)">
+    <rect x="55" y="430" width="210" height="130" class="actor"/>
+    <text x="160" y="483" class="label">管理员</text>
+    <text x="160" y="515" class="small">内容、评论与配置</text>
+  </g>
+
+  <g filter="url(#shadow)">
+    <ellipse cx="520" cy="275" rx="185" ry="92" class="process"/>
+    <text x="520" y="263" class="label">P1 内容浏览</text>
+    <text x="520" y="295" class="small">列表、搜索、文章详情</text>
+  </g>
+  <g filter="url(#shadow)">
+    <ellipse cx="520" cy="520" rx="185" ry="92" class="process"/>
+    <text x="520" y="508" class="label">P2 身份认证</text>
+    <text x="520" y="540" class="small">登录、OAuth、权限判断</text>
+  </g>
+  <g filter="url(#shadow)">
+    <ellipse cx="520" cy="765" rx="185" ry="92" class="process"/>
+    <text x="520" y="753" class="label">P3 内容管理</text>
+    <text x="520" y="785" class="small">文章、评论、站点配置</text>
+  </g>
+
+  <g filter="url(#shadow)">
+    <ellipse cx="960" cy="275" rx="190" ry="92" class="process"/>
+    <text x="960" y="263" class="label">P4 评论互动</text>
+    <text x="960" y="295" class="small">校验、审核、反应</text>
+  </g>
+  <g filter="url(#shadow)">
+    <ellipse cx="960" cy="520" rx="190" ry="92" class="process"/>
+    <text x="960" y="508" class="label">P5 查询与缓存</text>
+    <text x="960" y="540" class="small">QuerySet 优化、分页、缓存</text>
+  </g>
+  <g filter="url(#shadow)">
+    <ellipse cx="960" cy="765" rx="190" ry="92" class="process"/>
+    <text x="960" y="753" class="label">P6 通知与扩展</text>
+    <text x="960" y="785" class="small">邮件、插件 Hook、SEO</text>
+  </g>
+
+  <g filter="url(#shadow)">
+    <rect x="1260" y="180" width="455" height="160" class="store"/>
+    <text x="1487" y="220" class="label">D1 业务数据库（MySQL）</text>
+    <line x1="1285" y1="240" x2="1690" y2="240" stroke="#86efac"/>
+    <text x="1487" y="270" class="small">BlogUser · Article · Category · Tag</text>
+    <text x="1487" y="300" class="small">Comment · CommentReaction · BlogSettings</text>
+  </g>
+  <g filter="url(#shadow)">
+    <rect x="1260" y="385" width="455" height="130" class="store"/>
+    <text x="1487" y="425" class="label">D2 缓存与搜索索引</text>
+    <line x1="1285" y1="445" x2="1690" y2="445" stroke="#86efac"/>
+    <text x="1487" y="476" class="small">LocalMem / Redis · Whoosh / Elasticsearch</text>
+  </g>
+  <g filter="url(#shadow)">
+    <rect x="1260" y="570" width="455" height="130" class="external"/>
+    <text x="1487" y="610" class="label">E1 外部服务</text>
+    <line x1="1285" y1="630" x2="1690" y2="630" stroke="#fdba74"/>
+    <text x="1487" y="661" class="small">SMTP · OAuth 平台 · Cloudflare</text>
+  </g>
+  <g filter="url(#shadow)">
+    <rect x="1260" y="750" width="455" height="130" class="store"/>
+    <text x="1487" y="790" class="label">D3 静态与媒体文件</text>
+    <line x1="1285" y1="810" x2="1690" y2="810" stroke="#86efac"/>
+    <text x="1487" y="841" class="small">STATIC_ROOT · MEDIA_ROOT · uploads</text>
+  </g>
+
+  <path d="M265 270 C320 270 330 275 335 275" class="flow"/>
+  <text x="285" y="255" class="flow-text">页面请求</text>
+  <path d="M265 485 C330 485 355 520 335 520" class="flow"/>
+  <text x="280" y="465" class="flow-text">管理请求</text>
+  <path d="M265 760 C330 760 355 765 335 765" class="flow"/>
+  <path d="M705 275 H770" class="flow"/>
+  <path d="M705 520 H770" class="flow"/>
+  <path d="M705 765 H770" class="flow"/>
+  <path d="M1150 275 C1200 275 1200 240 1250 240" class="flow"/>
+  <path d="M1150 520 C1200 520 1200 450 1250 450" class="flow"/>
+  <path d="M1150 765 C1200 765 1200 690 1250 690" class="flow"/>
+  <path d="M960 367 V420" class="flow"/>
+  <path d="M960 612 V665" class="flow"/>
+
+  <text x="900" y="930" text-anchor="middle" class="small">敏感操作均由服务端再次校验权限；评论审核、缓存失效和邮件通知由模型信号与业务视图共同触发。</text>
+</svg>

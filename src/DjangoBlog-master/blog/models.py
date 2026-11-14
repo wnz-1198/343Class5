@@ -220,6 +220,7 @@ class Article(BaseModel):
 
     # XLT: 数据库以当前值原子递增，避免并发访问用旧值互相覆盖。
     def viewed(self):
+        # SJL: 使用数据库原子自增，避免多个请求同时读取旧值造成浏览量丢失。
         if self.pk is None:
             return
         updated = Article.objects.filter(pk=self.pk).update(views=F('views') + 1)

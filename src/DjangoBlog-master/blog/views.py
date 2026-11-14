@@ -35,6 +35,7 @@ import uuid
 
 from django.conf import settings
 from django.core.paginator import Paginator
+from django.db.models import Q
 from django.http import HttpResponse, HttpResponseForbidden
 from django.shortcuts import get_object_or_404
 from django.shortcuts import render
@@ -55,6 +56,7 @@ from comments.forms import CommentForm
 from djangoblog.plugin_manage import hooks
 from djangoblog.plugin_manage.hook_constants import ARTICLE_CONTENT_HOOK_NAME
 from djangoblog.utils import cache, get_blog_setting, get_sha256
+from blog.services import article_to_markdown, markdown_attachment_header
 # XLT: 视图层的关键复用点，具体职责见文件头说明
 from djangoblog.mixins import (
     SlugCachedMixin,
@@ -278,6 +280,35 @@ class ArticleDetailView(DetailView):
         # Action Hook, 通知插件"文章详情已获取"
         hooks.run_action('after_article_body_get', article=article, request=self.request)
         return context
+
+
+class ArticleExportView(DetailView):
+    """将可访问的文章导出为 Markdown 文件。"""
+
+    model = Article
+    pk_url_kwarg = 'article_id'
+
+    def get_queryset(self):
+        #SJL: 草稿只有作者或超级管理员可导出，公开文章允许匿名下载。
+        queryset = Article.objects.select_related(
+            'author', 'category'
+        ).prefetch_related('tags')
+        user = self.request.user
+        if user.is_authenticated and user.is_superuser:
+            return queryset
+        if user.is_authenticated:
+            return queryset.filter(Q(status='p') | Q(author=user))
+        return queryset.filter(status='p')
+
+    def get(self, request, *args, **kwargs):
+        article = self.get_object()
+        response = HttpResponse(
+            article_to_markdown(article),
+            content_type='text/markdown; charset=utf-8',
+        )
+        response['Content-Disposition'] = markdown_attachment_header(article)
+        response['X-Content-Type-Options'] = 'nosniff'
+        return response
 
 
 # XLT: 分类归档页。对应 URL name='category_detail' 与 'category_detail_page'。
