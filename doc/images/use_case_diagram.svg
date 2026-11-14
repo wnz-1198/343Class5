@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1700" height="1080" viewBox="0 0 1700 1080">
+  <defs>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="4" stdDeviation="7" flood-color="#0f172a" flood-opacity="0.12"/>
+    </filter>
+    <style>
+      .bg { fill: #fff; }
+      .head { fill: #0f172a; }
+      .title { font: 700 38px "Microsoft YaHei", sans-serif; fill: white; }
+      .sub { font: 400 18px "Microsoft YaHei", sans-serif; fill: #cbd5e1; }
+      .boundary { fill: #f8fafc; stroke: #64748b; stroke-width: 2.5; rx: 30; }
+      .usecase { fill: #eff6ff; stroke: #2563eb; stroke-width: 2.5; }
+      .actor { fill: white; stroke: #475569; stroke-width: 2.5; rx: 16; }
+      .label { font: 700 19px "Microsoft YaHei", sans-serif; fill: #0f172a; text-anchor: middle; }
+      .small { font: 400 14px "Microsoft YaHei", sans-serif; fill: #475569; text-anchor: middle; }
+      .line { stroke: #64748b; stroke-width: 2; fill: none; }
+    </style>
+  </defs>
+  <rect width="1700" height="1080" class="bg"/>
+  <rect width="1700" height="120" class="head"/>
+  <text x="58" y="54" class="title">DjangoBlog 用例图</text>
+  <text x="58" y="91" class="sub">游客、登录用户、作者、管理员四类参与者</text>
+
+  <g filter="url(#shadow)">
+    <rect x="70" y="225" width="230" height="120" class="actor"/>
+    <text x="185" y="274" class="label">游客</text>
+    <text x="185" y="306" class="small">未登录访问者</text>
+  </g>
+  <g filter="url(#shadow)">
+    <rect x="70" y="450" width="230" height="120" class="actor"/>
+    <text x="185" y="499" class="label">登录用户</text>
+    <text x="185" y="531" class="small">评论与互动</text>
+  </g>
+  <g filter="url(#shadow)">
+    <rect x="70" y="675" width="230" height="120" class="actor"/>
+    <text x="185" y="724" class="label">文章作者</text>
+    <text x="185" y="756" class="small">内容拥有者</text>
+  </g>
+  <g filter="url(#shadow)">
+    <rect x="1400" y="450" width="230" height="120" class="actor"/>
+    <text x="1515" y="499" class="label">管理员</text>
+    <text x="1515" y="531" class="small">内容与系统配置</text>
+  </g>
+
+  <rect x="380" y="170" width="875" height="800" class="boundary"/>
+  <text x="817" y="215" class="label">DjangoBlog 系统边界</text>
+
+  <ellipse cx="610" cy="290" rx="175" ry="64" class="usecase"/><text x="610" y="286" class="label">UC1 浏览与搜索内容</text><text x="610" y="313" class="small">首页、分类、标签、归档、搜索</text>
+  <ellipse cx="610" cy="450" rx="175" ry="64" class="usecase"/><text x="610" y="446" class="label">UC2 阅读文章</text><text x="610" y="473" class="small">正文、目录、推荐、导出</text>
+  <ellipse cx="610" cy="610" rx="175" ry="64" class="usecase"/><text x="610" y="606" class="label">UC3 登录与注册</text><text x="610" y="633" class="small">密码登录、OAuth、找回密码</text>
+  <ellipse cx="1040" cy="290" rx="175" ry="64" class="usecase"/><text x="1040" y="286" class="label">UC4 评论与反应</text><text x="1040" y="313" class="small">评论、回复、Emoji 反应</text>
+  <ellipse cx="1040" cy="450" rx="175" ry="64" class="usecase"/><text x="1040" y="446" class="label">UC5 导出 Markdown</text><text x="1040" y="473" class="small">公开文章或作者私有文章</text>
+  <ellipse cx="1040" cy="610" rx="175" ry="64" class="usecase"/><text x="1040" y="606" class="label">UC6 审核与管理</text><text x="1040" y="633" class="small">文章、评论、用户、站点配置</text>
+  <ellipse cx="817" cy="790" rx="205" ry="64" class="usecase"/><text x="817" y="786" class="label">UC7 发送通知与刷新缓存</text><text x="817" y="813" class="small">邮件、缓存失效、插件扩展</text>
+
+  <path d="M300 285 H425" class="line"/>
+  <path d="M300 330 C360 330 360 425 425 435" class="line"/>
+  <path d="M300 505 H425" class="line"/>
+  <path d="M300 730 C360 730 360 650 425 630" class="line"/>
+  <path d="M1255 285 H1340 C1390 285 1390 495 1430 495" class="line"/>
+  <path d="M1255 450 H1370 C1400 450 1400 500 1430 510" class="line"/>
+  <path d="M1255 610 H1400" class="line"/>
+  <path d="M300 505 C340 505 350 280 425 280" class="line"/>
+
+  <text x="850" y="1020" text-anchor="middle" class="small">实线连接表示参与者可发起或参与该用例；系统级通知与缓存刷新由业务用例内部触发。</text>
+</svg>
