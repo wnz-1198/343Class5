@@ -1,3 +1,4 @@
+#SJL: OAuth 视图模块，完成授权跳转、回调换 token、本地用户绑定和邮件确认。
 import logging
 # Create your views here.
 from urllib.parse import urlparse
@@ -28,6 +29,7 @@ logger = logging.getLogger(__name__)
 
 
 def get_redirecturl(request):
+    #SJL: 只允许站内相对地址或当前站点域名，防止登录后被重定向到外部钓鱼站点。
     nexturl = request.GET.get('next_url', None)
     if not nexturl or nexturl == '/login/' or nexturl == '/login':
         return '/'
@@ -46,6 +48,7 @@ def get_redirecturl(request):
 
 
 def oauthlogin(request):
+    #SJL: 根据平台类型选择管理器，并跳转到第三方授权页面。
     type = request.GET.get('type', None)
     if not type:
         return HttpResponseRedirect('/')
@@ -58,6 +61,7 @@ def oauthlogin(request):
 
 
 def authorize(request):
+    #SJL: 回调阶段校验授权码、获取第三方用户信息，并在事务内完成本地绑定。
     type = request.GET.get('type', None)
     if not type:
         return HttpResponseRedirect('/')
@@ -68,6 +72,7 @@ def authorize(request):
     try:
         rsp = manager.get_access_token_by_code(code)
     except OAuthAccessTokenException as e:
+        #SJL: 授权码失效属于可预期业务异常，记录简要信息并返回首页。
         logger.warning("OAuthAccessTokenException:" + str(e))
         return HttpResponseRedirect('/')
     except Exception as e:
@@ -78,9 +83,11 @@ def authorize(request):
         return HttpResponseRedirect(manager.get_authorization_url(nexturl))
     user = manager.get_oauth_userinfo()
     if user:
+        #SJL: 缺少昵称时生成稳定长度的临时昵称，避免后续页面展示空白。
         if not user.nickname or not user.nickname.strip():
             user.nickname = "djangoblog" + timezone.now().strftime('%y%m%d%I%M%S')
         try:
+            #SJL: 同一 type + openid 视为同一第三方账户，再次登录时更新资料。
             temp = OAuthUser.objects.get(type=type, openid=user.openid)
             temp.picture = user.picture
             temp.metadata = user.metadata
@@ -141,6 +148,7 @@ def authorize(request):
 
 
 def emailconfirm(request, id, sign):
+    #SJL: 邮件确认使用签名校验链接，防止仅修改 URL 中的用户 id 完成绑定。
     if not sign:
         return HttpResponseForbidden()
     if not get_sha256(settings.SECRET_KEY +
@@ -149,6 +157,7 @@ def emailconfirm(request, id, sign):
         return HttpResponseForbidden()
     oauthuser = get_object_or_404(OAuthUser, pk=id)
     with transaction.atomic():
+        #SJL: 本地用户创建和 OAuthUser.author 绑定必须同成同败。
         if oauthuser.author:
             author = get_user_model().objects.get(pk=oauthuser.author_id)
         else:
@@ -198,6 +207,7 @@ def emailconfirm(request, id, sign):
 
 
 class RequireEmailView(FormView):
+    #SJL: 第三方平台未返回邮箱时，要求用户补充邮箱后再完成账户绑定。
     form_class = RequireEmailForm
     template_name = 'oauth/require_email.html'
 
@@ -225,6 +235,7 @@ class RequireEmailView(FormView):
         return super(RequireEmailView, self).get_context_data(**kwargs)
 
     def form_valid(self, form):
+        #SJL: 邮箱先保存到 OAuthUser，再发送带签名的确认链接。
         email = form.cleaned_data['email']
         oauthid = form.cleaned_data['oauthid']
         oauthuser = get_object_or_404(OAuthUser, pk=oauthid)
@@ -261,6 +272,7 @@ class RequireEmailView(FormView):
 
 
 def bindsuccess(request, oauthid):
+    #SJL: 成功页根据 email/oauth 两种绑定方式返回不同提示。
     type = request.GET.get('type', None)
     oauthuser = get_object_or_404(OAuthUser, pk=oauthid)
     if type == 'email':

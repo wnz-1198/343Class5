@@ -1,3 +1,4 @@
+#SJL: OAuth 模板标签，只向前端暴露平台名称和登录 URL，不暴露 AppSecret。
 from django import template
 from django.urls import reverse
 
@@ -8,6 +9,7 @@ register = template.Library()
 
 @register.inclusion_tag('oauth/oauth_applications.html')
 def load_oauth_applications(request):
+    #SJL: 保留当前页面路径作为 next_url，登录后由服务端再次校验是否允许跳转。
     applications = get_oauth_apps()
     if applications:
         baseurl = reverse('oauth:oauthlogin')
