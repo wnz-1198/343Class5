@@ -1,12 +1,21 @@
-# ============================================================
-# comments/test_sensitive_words.py —— 敏感词过滤测试
-# ============================================================
-# 对应《comments敏感词过滤设计方案.md》第 4 节测试计划：
-#   - 单元测试：check_sensitive_words 纯函数（命中/大小写归一化/空输入）
-#   - 视图测试：提交拦截、正常评论回归、楼中楼回复拦截
-# 基类复用 djangoblog.test_base.BaseTestCase（呼应质量报告 Q9：
-# 避免 test_views.py 中 setUp 复制粘贴的测试改进方向）
-# ============================================================
+# DB ============================================================
+
+# DB comments/test_sensitive_words.py —— 敏感词过滤测试
+
+# DB ============================================================
+
+# DB 对应《comments敏感词过滤设计方案.md》第 4 节测试计划：
+
+# DB - 单元测试：check_sensitive_words 纯函数（命中/大小写归一化/空输入）
+
+# DB - 视图测试：提交拦截、正常评论回归、楼中楼回复拦截
+
+# DB 基类复用 djangoblog.test_base.BaseTestCase（呼应质量报告 Q9：
+
+# DB 避免 test_views.py 中 setUp 复制粘贴的测试改进方向）
+
+# DB ============================================================
+
 from unittest.mock import patch
 
 from django.urls import reverse
@@ -40,7 +49,8 @@ class SensitiveWordsFunctionTest(BaseTestCase):
 
     def test_case_insensitive_for_english_words(self):
         """英文词大小写归一化：'SPAM' 等价 'spam'"""
-        # 用 patch 注入英文词库，验证归一化逻辑（不改生产词库）
+        # DB 用 patch 注入英文词库，验证归一化逻辑（不改生产词库）
+
         with patch('comments.sensitive_words.load_sensitive_words',
                    return_value=['spam']):
             self.assertEqual(check_sensitive_words('this is SPAM content'), ['spam'])
@@ -72,12 +82,15 @@ class SensitiveWordsViewTest(BaseTestCase):
     def test_sensitive_comment_rejected(self):
         """含敏感词的评论：拒绝入库并回显错误提示"""
         response = self.client.post(self.post_url, {'body': '专业赌博网站推荐'})
-        # 命中后走 form_invalid，重渲染文章详情页（200）而非重定向
+        # DB 命中后走 form_invalid，重渲染文章详情页（200）而非重定向
+
         self.assertEqual(response.status_code, 200)
-        # 错误提示中包含命中词
+        # DB 错误提示中包含命中词
+
         self.assertContains(response, '敏感词')
         self.assertContains(response, '赌博')
-        # 数据库不产生任何评论记录
+        # DB 数据库不产生任何评论记录
+
         self.assertFalse(Comment.objects.filter(article=self.article).exists())
 
     def test_multiple_hits_all_reported(self):
