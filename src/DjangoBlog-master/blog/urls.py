@@ -41,6 +41,10 @@ urlpatterns = [
         r'article/<int:year>/<int:month>/<int:day>/<int:article_id>.html',
         views.ArticleDetailView.as_view(),
         name='detailbyid'),
+    path(
+        r'article/<int:year>/<int:month>/<int:day>/<int:article_id>/export.md',
+        views.ArticleExportView.as_view(),
+        name='export_markdown'),
     # 分类页：/category/<分类slug>.html
     # slug 来自 Category.slug，视图用 SlugCachedMixin 按 slug 取对象并缓存
     path(

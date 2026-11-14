@@ -220,8 +220,13 @@ class Article(BaseModel):
     # 浏览数自增。只传 update_fields=['views']，
     # 会被 BaseModel.save 识别为"仅更新浏览数"并走轻量 UPDATE 分支
     def viewed(self):
-        self.views += 1
-        self.save(update_fields=['views'])
+        #SJL: 使用数据库原子自增，避免多个请求同时读取旧值造成浏览量丢失。
+        updated = Article.objects.filter(pk=self.pk).update(
+            views=models.F('views') + 1
+        )
+        if updated:
+            self.refresh_from_db(fields=['views'])
+        return self.views
 
     # 取本文的有效评论列表，带手写缓存（键按文章 id 区分，过期 10 小时）
     def comment_list(self):
