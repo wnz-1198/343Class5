@@ -119,11 +119,14 @@ def model_post_save_callback(
             cache.delete('seo_processor')
 
             # ZZC: 邮件发送放入守护线程，避免 SMTP 延迟阻塞评论保存请求。
-            threading.Thread(
-                target=send_comment_email,
-                args=(instance,),
-                daemon=True,
-            ).start()
+            # 测试库使用共享内存 SQLite，后台线程查库会与测试连接互锁，
+            # 因此测试模式下不启动该线程。
+            if not settings.TESTING:
+                threading.Thread(
+                    target=send_comment_email,
+                    args=(instance,),
+                    daemon=True,
+                ).start()
 
     # ZZC: 文章、分类和标签分别影响不同页面，使用最小范围删除以保留其他缓存。
     elif 'get_full_url' in dir(instance):
