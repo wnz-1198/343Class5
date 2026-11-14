@@ -1,0 +1,77 @@
+@startuml blog_sequence_archives
+title Blog 查看文章归档
+actor 读者 as R
+participant "归档路由及整页缓存" as Router
+participant ArchivesView as View
+participant "归档结果缓存" as Cache
+database "Article ORM" as DB
+participant "article_archives.html" as T
+R -> Router : GET /archives.html
+alt 有可用的整页缓存
+  Router --> R : 返回已缓存的归档响应
+else 未命中整页缓存
+  Router -> View : 执行 ArchivesView
+  View -> Cache : get('archives')
+  alt 查询结果可用
+    Cache --> View : 返回已缓存查询结果
+  else 查询结果不可用
+    View -> DB : 取 status='p' 的内容（包含独立页面）
+    DB --> View : 返回结果
+    View -> Cache : set('archives', queryset)
+  end
+  View -> T : 提供完整文章列表，不分页
+  T -> T : 按发布时间的年和月分组
+  T --> Router : 归档响应
+  Router --> R : 返回归档树与文章链接
+end
+@enduml
+@startuml blog_sequence_category_tag
+title Blog 按分类或标签浏览
+actor 读者 as R
+participant "CategoryDetailView / TagDetailView" as View
+participant "列表查询缓存" as Cache
+database "Category / Tag / Article ORM" as DB
+participant "article_index.html" as T
+R -> View : GET /category/<slug>.html 或 /tag/<slug>.html\n分页链接可带页码
+View -> DB : 按 URL slug 解析分类或标签
+alt slug 不存在
+  DB --> View : 无记录
+  View --> R : HTTP 404
+else slug 有效
+  DB --> View : 分类或标签实例
+  View -> Cache : 查询带名称与页码的缓存键
+  alt 有可用列表
+    Cache --> View : 列表查询结果
+  else 无可用列表
+    alt 分类页
+      View -> DB : 获取当前与子孙分类\n过滤对应分类下已发布内容
+    else 标签页
+      View -> DB : 按标签多对多关联过滤\n只取已发布普通文章
+    end
+    DB --> View : 查询结果
+    View -> Cache : 缓存查询结果
+  end
+  View -> T : 提供列表、分页、栏目名称和页面信息
+  T --> R : 显示文章卡片和分页入口
+end
+@enduml
+@startuml blog_sequence_author
+title Blog 按作者浏览
+actor 读者 as R
+participant AuthorDetailView as V
+participant "列表查询缓存" as C
+database "BlogUser / Article ORM" as DB
+participant "article_index.html" as T
+R -> V : GET /author/<用户名>.html 或分页地址
+V -> C : 按用户名与页码查询列表缓存
+alt 有可用结果
+  C --> V : 缓存结果
+else 无可用结果
+  V -> DB : 按作者名查已发布普通文章
+  DB --> V : 返回文章查询结果
+  V -> C : 写入列表缓存
+end
+V -> V : 用 URL 中的用户名和文章数生成上下文
+V -> T : 提供作者名称、列表与分页
+T --> R : 显示列表，无匹配文章时显示空列表
+@enduml

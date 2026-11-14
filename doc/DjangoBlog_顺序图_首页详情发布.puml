@@ -1,0 +1,75 @@
+@startuml
+title UC-01 浏览首页及分页
+actor 读者
+participant "IndexView / ListView" as V
+participant "列表查询缓存" as C
+database "文章 ORM" as DB
+participant "article_index.html" as T
+读者 -> V : GET / 或 /page/<page>/
+V -> V : 获取页码并生成 index_{page_number}
+V -> C : get(cache_key)
+alt 有可用的缓存结果
+  C --> V : 返回缓存的文章列表查询结果
+else 无可用的缓存结果
+  C --> V : 未命中
+  V -> DB : 查询普通文章且已发布\n预加载作者、分类及标签
+  DB --> V : 查询结果
+  V -> C : set(cache_key, queryset)
+end
+V -> V : 分页并补充站点 SEO 上下文
+V -> T : 提供 article_list、page_obj 等
+T --> 读者 : 文章卡片与分页链接
+@enduml
+@startuml
+title UC-02 阅读文章或独立页面
+actor 读者
+participant ArticleDetailView as V
+database "Article / Comment ORM" as DB
+participant "插件钩子 / ViewCountPlugin" as P
+participant "article_detail.html" as T
+读者 -> V : GET /article/<年>/<月>/<日>/<id>.html
+V -> DB : 按 article_id 查已发布 Article
+alt 文章不存在或仍为草稿
+  DB --> V : 无记录
+  V --> 读者 : 404
+else 找到文章
+  DB --> V : Article
+  V -> DB : 取已启用的顶级评论\n预加载评论作者、直接子评论及其作者
+  DB --> V : 评论查询结果
+  V -> V : 按 comment_page 分页\n用 Article.comment_list() 计算评论总数
+  V -> P : after_article_body_get
+  opt 浏览量插件已启用
+    P -> DB : Article.viewed() 更新 views
+  end
+  V -> T : 提供文章、评论分页、SEO 和上下篇
+  T -> T : 渲染正文；两个评论开关均开启时展示评论区
+  T --> 读者 : 详情页
+end
+@enduml
+@startuml
+title UC-BLOG-01 发布文章
+actor 超级管理员 as A
+participant "DjangoBlogAdminSite / ArticlelAdmin" as V
+participant ArticleForm as F
+database "Article ORM" as DB
+participant "post_save 接收器" as S
+A -> V : 提交文章表单或执行列表批量发布
+V -> V : 检查后台访问权限
+alt 单篇新增或编辑并发布
+  V -> F : 校验标题、正文、作者、分类等字段
+  alt 校验失败
+    F --> V : 表单错误
+    V --> A : 返回表单和错误提示
+  else 校验通过
+    F --> V : 通过
+    V -> DB : 保存 Article，status='p'
+    DB -> S : post_save
+    S -> S : 清理首页首屏等缓存键
+    V --> A : 返回保存成功页面或列表
+  end
+else 批量发布所选文章
+  V -> DB : queryset.update(status='p')
+  DB --> V : 更新完成
+  V --> A : 返回文章列表
+end
+@enduml

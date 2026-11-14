@@ -168,6 +168,19 @@ class ArticleLifecycleTest(TestCase):
         article.refresh_from_db()
         self.assertEqual(article.views, initial_views + 1)
 
+    def test_article_views_increment_from_two_loaded_instances(self):
+        article = Article.objects.create(
+            title='Counter regression', body='Test content',
+            author=self.author, category=self.category,
+        )
+        stale_article = Article.objects.get(pk=article.pk)
+
+        article.viewed()
+        stale_article.viewed()
+
+        article.refresh_from_db()
+        self.assertEqual(article.views, 2)
+
     def test_article_views_multiple_increments(self):
         """测试文章多次浏览时浏览量正确累加"""
         article = Article.objects.create(
