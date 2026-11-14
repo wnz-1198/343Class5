@@ -5,7 +5,7 @@
 
 import logging
 import os
-import random
+import secrets
 import string
 import uuid
 import hashlib
@@ -45,7 +45,7 @@ def cache_decorator(expiration=3 * 60):
             try:
                 view = args[0]
                 key = view.get_cache_key()
-            except:
+            except (AttributeError, IndexError, TypeError):
                 key = None
             if not key:
                 unique_str = repr((func, args, kwargs))
@@ -134,7 +134,7 @@ class CommonMarkdown:
     # ZZC: 仅需要正文时丢弃目录，减少调用方处理成本。
     @staticmethod
     def get_markdown(value):
-        body, toc = CommonMarkdown._convert_markdown(value)
+        body, _ = CommonMarkdown._convert_markdown(value)
         return body
 
 
@@ -151,7 +151,7 @@ def send_email(emailto, title, content):
 # ZZC: 从数字字符集中无放回抽取六位字符，生成注册或重置密码验证码。
 def generate_code() -> str:
     """生成随机数验证码"""
-    return ''.join(random.sample(string.digits, 6))
+    return ''.join(secrets.choice(string.digits) for _ in range(6))
 
 
 # ZZC: 对字典的键和值执行 URL 编码，再拼接成查询字符串。
@@ -215,8 +215,8 @@ def save_user_avatar(url):
             with open(os.path.join(basedir, save_filename), 'wb+') as file:
                 file.write(rsp.content)
             return static('avatar/' + save_filename)
-    except Exception as e:
-        logger.error(e)
+    except Exception:
+        logger.exception('保存用户头像失败: %s', url)
         return static('blog/img/avatar.png')
 
 
@@ -242,7 +242,7 @@ def get_resource_url():
         return settings.STATIC_URL
     else:
         site = get_current_site()
-        return 'http://' + site.domain + '/static/'
+        return 'https://' + site.domain + '/static/'
 
 
 # 允许的HTML标签白名单 - 支持markdown常用元素
@@ -309,6 +309,6 @@ def sanitize_html(html):
     
     # 移除空的 style 属性（bleach 有时会保留 style=""）
     import re
-    cleaned = re.sub(r'\s*style\s*=\s*["\'][\s]*["\']', '', cleaned)
+    cleaned = re.sub(r'\s*style\s*=\s*["\']\s*["\']', '', cleaned)
     
     return cleaned

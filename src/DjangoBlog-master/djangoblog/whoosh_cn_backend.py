@@ -48,8 +48,9 @@ if not hasattr(whoosh, '__version__') or whoosh.__version__ < (2, 5, 0):
 
 # Bubble up the correct error.
 
+# ZZC: 使用原始字符串保留正则转义，避免 Python 将 \d 解释为无效转义序列。
 DATETIME_REGEX = re.compile(
-    '^(?P<year>\d{4})-(?P<month>\d{2})-(?P<day>\d{2})T(?P<hour>\d{2}):(?P<minute>\d{2}):(?P<second>\d{2})(\.\d{3,6}Z?)?$')
+    r'^(?P<year>\d{4})-(?P<month>\d{2})-(?P<day>\d{2})T(?P<hour>\d{2}):(?P<minute>\d{2}):(?P<second>\d{2})(\.\d{3,6}Z?)?$')
 LOCALS = threading.local()
 LOCALS.RAM_STORE = None
 

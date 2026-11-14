@@ -34,7 +34,6 @@ SECRET_KEY = os.environ.get(
     'DJANGO_SECRET_KEY') or 'n9ceqv38)#&mwuat@(mjb_p%em$e8$qyr#fw9ot!=ba6lijx-6'
 # ZZC: DEBUG 默认开启，部署时必须通过 DJANGO_DEBUG=False 关闭调试信息。
 DEBUG = env_to_bool('DJANGO_DEBUG', True)
-# DEBUG = False
 TESTING = len(sys.argv) > 1 and sys.argv[1] == 'test'
 
 # ZZC: 当前允许所有主机访问，生产部署应改为明确域名，避免 Host Header 攻击面扩大。
@@ -322,7 +321,7 @@ if os.environ.get("DJANGO_REDIS_URL"):
 # ZZC: django.contrib.sites 使用 ID=1 的站点记录；初始化数据后需确认其域名正确。
 SITE_ID = 1
 BAIDU_NOTIFY_URL = os.environ.get('DJANGO_BAIDU_NOTIFY_URL') \
-                   or 'http://data.zz.baidu.com/urls?site=https://www.lylinux.net&token=1uAOGrMsUm5syDGn'
+                   or 'https://data.zz.baidu.com/urls?site=https://www.lylinux.net&token=1uAOGrMsUm5syDGn'
 
 # Email:
 # ZZC: 邮件默认通过 SMTP 发送，账号密码从环境变量读取。
