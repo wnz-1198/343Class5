@@ -2,6 +2,9 @@
 Blog Views 测试
 测试视图层的错误处理、权限验证和边界条件
 """
+from django.conf import settings
+from django.core.cache import cache
+from django.test import Client
 from django.urls import reverse
 
 from blog.models import Article
@@ -23,8 +26,7 @@ class ArticleViewTest(BaseTestCase, ViewTestMixin):
         draft_article = self.create_article(title='草稿文章测试', status='d')
         url = draft_article.get_absolute_url()
         response = self.client.get(url)
-        # 草稿可以访问但可能有限制，或者返回 200
-        self.assertIn(response.status_code, [200, 302, 404])
+        self.assertEqual(response.status_code, 404)
 
     def test_article_detail_increases_views(self):
         """测试访问文章增加浏览量"""
@@ -109,6 +111,39 @@ class ArticleViewTest(BaseTestCase, ViewTestMixin):
         self.assertContains(response, self.user.username)
 
 
+class CacheClearViewTest(BaseTestCase):
+    def setUp(self):
+        super().setUp()
+        self.url = reverse('blog:clean')
+        cache.set('cache-clear-test', 'present')
+        self.addCleanup(cache.delete, 'cache-clear-test')
+
+    def test_get_never_clears_cache(self):
+        self.client.force_login(self.admin_user)
+        self.assertEqual(self.client.get(self.url).status_code, 405)
+        self.assertEqual(cache.get('cache-clear-test'), 'present')
+
+    def test_non_admin_cannot_clear_cache(self):
+        self.client.force_login(self.user)
+        self.assertEqual(self.client.post(self.url).status_code, 403)
+        self.assertEqual(cache.get('cache-clear-test'), 'present')
+
+    def test_admin_post_requires_csrf(self):
+        client = Client(enforce_csrf_checks=True)
+        client.force_login(self.admin_user)
+        self.assertEqual(client.post(self.url).status_code, 403)
+        self.assertEqual(cache.get('cache-clear-test'), 'present')
+
+    def test_admin_can_clear_cache(self):
+        client = Client(enforce_csrf_checks=True)
+        client.force_login(self.admin_user)
+        token = 'a' * 32
+        client.cookies[settings.CSRF_COOKIE_NAME] = token
+        response = client.post(self.url, {'csrfmiddlewaretoken': token})
+        self.assertEqual(response.status_code, 200)
+        self.assertIsNone(cache.get('cache-clear-test'))
+
+
 class SearchViewTest(BaseTestCase, ViewTestMixin):
     """测试搜索功能"""
 
@@ -145,10 +180,10 @@ class ArticlePermissionTest(BaseTestCase, ViewTestMixin):
         response = self.client.get(published.get_absolute_url())
         self.assertEqual(response.status_code, 200)
 
-        # 草稿（草稿可能也可以访问，取决于权限）
+        # 草稿链接在公开详情中返回 404。
         draft = self.create_article(title='草稿状态测试', status='d')
         response = self.client.get(draft.get_absolute_url())
-        self.assertIn(response.status_code, [200, 302, 404])
+        self.assertEqual(response.status_code, 404)
 
 
 class ErrorHandlingTest(BaseTestCase, ViewTestMixin):

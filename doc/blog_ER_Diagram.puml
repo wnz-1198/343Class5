@@ -1,0 +1,137 @@
+@startuml
+title DjangoBlog — blog 模块 E-R 图
+left to right direction
+hide circle
+skinparam shadowing false
+skinparam classBackgroundColor #E8F2FC
+skinparam classBackgroundColor<<external>> #FFF1DC
+
+' 源码路径均相对于 src/DjangoBlog-master。
+' blog/models.py:54-60,97-195
+entity "Article\n文章 / 独立页面" as Article {
+  * id : AutoField <<PK>>
+  --
+  * title : CharField(200) <<UK>>
+  * body : MDTextField
+  * pub_time : DateTime
+  * status : Char(1)
+  * comment_status : Char(1)
+  * type : Char(1)
+  * views : PositiveInteger
+  * article_order : Integer
+  * show_toc : Boolean
+  * creation_time : DateTime
+  * last_modify_time : DateTime
+  * author_id : BigInt <<FK>>
+  * category_id : Int <<FK>>
+}
+
+' blog/models.py:274-296,349-373
+entity "Category\n分类" as Category {
+  * id : AutoField <<PK>>
+  --
+  * name : CharField(30) <<UK>>
+  * slug : SlugField(60)
+  * index : Integer
+  * creation_time : DateTime
+  * last_modify_time : DateTime
+  parent_category_id : Int <<FK>>
+}
+
+entity "Tag\n标签" as Tag {
+  * id : AutoField <<PK>>
+  --
+  * name : CharField(30) <<UK>>
+  * slug : SlugField(60)
+  * creation_time : DateTime
+  * last_modify_time : DateTime
+}
+
+' blog/models.py:164-166；blog/migrations/0001_initial.py:111-129
+entity "Article_Tag\nblog_article_tags（自动关联表）" as ArticleTag {
+  * article_id : Int <<FK>>
+  * tag_id : Int <<FK>>
+}
+
+' blog/models.py:378-430；blog/migrations/0001_initial.py:44-78
+entity "Links\n友情链接" as Links {
+  * id : BigAutoField <<PK>>
+  --
+  * name : CharField(30) <<UK>>
+  * link : URLField
+  * sequence : Integer <<UK>>
+  * is_enable : Boolean
+  * show_type : Char(1)
+  * creation_time : DateTime
+  * last_mod_time : DateTime
+}
+
+entity "SideBar\n自定义侧边栏" as SideBar {
+  * id : BigAutoField <<PK>>
+  --
+  * name : CharField(100)
+  * content : Text
+  * sequence : Integer <<UK>>
+  * is_enable : Boolean
+  * creation_time : DateTime
+  * last_mod_time : DateTime
+}
+
+' blog/models.py:439-552；blog/migrations/0001_initial.py:19-22
+entity "BlogSettings\n站点配置" as BlogSettings {
+  * id : BigAutoField <<PK>>
+  --
+  * site_name : CharField(200)
+  * site_description : Text(1000)
+  * site_seo_description : Text(1000)
+  * site_keywords : Text(1000)
+  * article_sub_length : Integer
+  * sidebar_article_count : Integer
+  * sidebar_comment_count : Integer
+  * article_comment_count : Integer
+  * show_google_adsense : Boolean
+  google_adsense_codes : Text(2000)
+  * open_site_comment : Boolean
+  * color_scheme : CharField(20)
+  global_header : Text
+  global_footer : Text
+  beian_code : CharField(2000)
+  * analytics_code : Text(1000)
+  * show_gongan_code : Boolean
+  gongan_beiancode : Text(2000)
+  * comment_need_review : Boolean
+}
+
+' djangoblog/settings.py:271；accounts/models.py:11-59；accounts/migrations/0001_initial.py:18-22
+entity "BlogUser\naccounts（外部实体，节选）" as BlogUser <<external>> {
+  * id : BigAutoField <<PK>>
+  --
+  * nickname : CharField(100)
+}
+
+' comments/models.py:43-68；comments/migrations/0001_initial.py:19-22
+entity "Comment\ncomments（外部实体，节选）" as Comment <<external>> {
+  * id : BigAutoField <<PK>>
+  --
+  * article_id : Int <<FK>>
+  * author_id : BigInt <<FK>>
+  parent_comment_id : BigInt <<FK>>
+  * is_enable : Boolean
+}
+
+BlogUser ||--o{ Article : author_id
+Category ||--o{ Article : category_id
+Category |o--o{ Category : parent_category_id
+Article ||--o{ ArticleTag : article_id
+Tag ||--o{ ArticleTag : tag_id
+Article ||--o{ Comment : article_id
+BlogUser ||--o{ Comment : author_id
+Comment |o--o{ Comment : parent_comment_id
+
+legend bottom
+  * = 非空；PK = 主键；FK = 外键；UK = 唯一字段
+  图中的外键关系由 Django 级联删除。Article_Tag 只列关联外键。
+  Links、SideBar、BlogSettings 在本范围内无外键关系。
+  BlogSettings 的单行限制由 clean() 校验。
+endlegend
+@enduml

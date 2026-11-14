@@ -56,7 +56,7 @@ class AccountTest(TestCase):
         self.assertEqual(response.status_code, 200)
 
     def test_validate_register(self):
-        self.assertEquals(
+        self.assertEqual(
             0, len(
                 BlogUser.objects.filter(
                     email='user123@user.com')))
@@ -66,13 +66,13 @@ class AccountTest(TestCase):
             'password1': 'password123!q@wE#R$T',
             'password2': 'password123!q@wE#R$T',
         })
-        self.assertEquals(
+        self.assertEqual(
             1, len(
                 BlogUser.objects.filter(
                     email='user123@user.com')))
         user = BlogUser.objects.filter(email='user123@user.com')[0]
         sign = get_sha256(get_sha256(settings.SECRET_KEY + str(user.id)))
-        path = reverse('accounts:result')
+        path = reverse('account:result')
         url = '{path}?type=validation&id={id}&sign={sign}'.format(
             path=path, id=user.id, sign=sign)
         response = self.client.get(url)

@@ -1,0 +1,70 @@
+@startuml
+title DjangoBlog 网站主要用例
+left to right direction
+skinparam shadowing false
+skinparam packageStyle rectangle
+skinparam actorBorderColor #27435C
+skinparam usecaseBorderColor #41617D
+skinparam usecaseBackgroundColor #F1F7FC
+
+actor "读者" as Reader
+actor "已登录用户" as Member
+actor "超级管理员" as Admin
+
+rectangle "DjangoBlog 网站" {
+  package "内容浏览" {
+    usecase "浏览首页及分页" as Index
+    usecase "按分类、标签或作者浏览" as Filter
+    usecase "阅读文章或独立页面" as Detail
+    usecase "查看文章归档" as Archive
+    usecase "搜索文章" as Search
+    usecase "查看友情链接" as Links
+  }
+  package "账户与评论" {
+    usecase "注册账户" as Register
+    usecase "登录" as Login
+    usecase "找回密码" as Reset
+    usecase "退出登录" as Logout
+    usecase "发表评论或回复" as Comment
+    usecase "添加或取消评论反应" as React
+  }
+  package "后台管理" {
+    usecase "编辑文章或保存草稿" as Edit
+    usecase "发布文章" as Publish
+    usecase "改回草稿或调整文章评论开关" as Status
+    usecase "管理分类、标签与友情链接" as Taxonomy
+    usecase "管理侧栏与站点配置" as Settings
+    usecase "审核评论" as Moderate
+    usecase "管理用户" as Accounts
+  }
+}
+
+Member --|> Reader
+
+Reader -- Index
+Reader -- Filter
+Reader -- Detail
+Reader -- Archive
+Reader -- Search
+Reader -- Links
+Reader -- Register
+Reader -- Login
+Reader -- Reset
+
+Member -- Logout
+Member -- Comment
+Member -- React
+
+Admin -- Edit
+Admin -- Publish
+Admin -- Status
+Admin -- Taxonomy
+Admin -- Settings
+Admin -- Moderate
+Admin -- Accounts
+
+' 范围：网站读者、账户、评论和内容管理的主要用例。
+' 内容：blog/urls.py:23-89；djangoblog/urls.py:60-74。
+' 账户与评论：accounts/urls.py:9-27；comments/urls.py:11-22。
+' 后台：djangoblog/admin_site.py:25-26,39-55；blog/admin.py:22-119。
+@enduml
