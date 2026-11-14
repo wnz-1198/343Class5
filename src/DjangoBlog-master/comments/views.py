@@ -9,6 +9,7 @@ from blog.models import Article
 from djangoblog.base_views import AuthenticatedFormView
 from .forms import CommentForm
 from .models import Comment, CommentReaction
+from .sensitive_words import check_sensitive_words
 
 
 class CommentPostView(AuthenticatedFormView):
@@ -63,6 +64,17 @@ class CommentPostView(AuthenticatedFormView):
         # 文章级开关：comment_status='c' 评论关闭；文章被下架(status='c')也禁止评论
         if article.comment_status == 'c' or article.status == 'c':
             raise ValidationError("该文章评论已关闭.")
+
+        # 敏感词过滤（质量报告 Q4）：提交入口拦截违规内容，命中即拒绝并回显错误
+        # 位置约定：位于评论开关校验之后、入库之前；命中走 form_invalid 复用
+        # 既有"重渲染文章详情页 + 表单错误"契约，不改动模板与路由
+        hits = check_sensitive_words(form.cleaned_data['body'])
+        if hits:
+            # 最多回显 5 个命中词，避免长列表刷屏
+            form.add_error(
+                'body',
+                "评论包含敏感词：{}，请修改后重新提交".format('、'.join(hits[:5])))
+            return self.form_invalid(form)
         # commit=False：先不入库，补全外键后统一保存
         comment = form.save(False)
         comment.article = article
