@@ -1,4 +1,5 @@
 # Create your views here.
+
 from django.core.exceptions import ValidationError
 from django.http import HttpResponseRedirect, JsonResponse
 from django.shortcuts import get_object_or_404
@@ -38,14 +39,16 @@ class CommentPostView(AuthenticatedFormView):
     template_name = 'blog/article_detail.html'
 
     def get(self, request, *args, **kwargs):
-        # GET 不展示发表表单，统一重定向回文章详情页评论区
+        # DB GET 不展示发表表单，统一重定向回文章详情页评论区
+
         article_id = self.kwargs['article_id']
         article = get_object_or_404(Article, pk=article_id)
         url = article.get_absolute_url()
         return HttpResponseRedirect(url + "#comments")
 
     def form_invalid(self, form):
-        # 表单校验失败(如正文为空)：带着错误信息重新渲染文章详情页
+        # DB 表单校验失败(如正文为空)：带着错误信息重新渲染文章详情页
+
         article_id = self.kwargs['article_id']
         article = get_object_or_404(Article, pk=article_id)
 
@@ -61,38 +64,47 @@ class CommentPostView(AuthenticatedFormView):
         article_id = self.kwargs['article_id']
         article = get_object_or_404(Article, pk=article_id)
 
-        # 文章级开关：comment_status='c' 评论关闭；文章被下架(status='c')也禁止评论
+        # DB 文章级开关：comment_status='c' 评论关闭；文章被下架(status='c')也禁止评论
+
         if article.comment_status == 'c' or article.status == 'c':
             raise ValidationError("该文章评论已关闭.")
 
-        # 敏感词过滤（质量报告 Q4）：提交入口拦截违规内容，命中即拒绝并回显错误
-        # 位置约定：位于评论开关校验之后、入库之前；命中走 form_invalid 复用
-        # 既有"重渲染文章详情页 + 表单错误"契约，不改动模板与路由
+        # DB 敏感词过滤（质量报告 Q4）：提交入口拦截违规内容，命中即拒绝并回显错误
+
+        # DB 位置约定：位于评论开关校验之后、入库之前；命中走 form_invalid 复用
+
+        # DB 既有"重渲染文章详情页 + 表单错误"契约，不改动模板与路由
+
         hits = check_sensitive_words(form.cleaned_data['body'])
         if hits:
-            # 最多回显 5 个命中词，避免长列表刷屏
+            # DB 最多回显 5 个命中词，避免长列表刷屏
+
             form.add_error(
                 'body',
                 "评论包含敏感词：{}，请修改后重新提交".format('、'.join(hits[:5])))
             return self.form_invalid(form)
-        # commit=False：先不入库，补全外键后统一保存
+        # DB commit=False：先不入库，补全外键后统一保存
+
         comment = form.save(False)
         comment.article = article
         from djangoblog.utils import get_blog_setting
         settings = get_blog_setting()
-        # 站点配置"评论无需审核"时直接上架；否则默认 is_enable=False 等待后台审核
+        # DB 站点配置"评论无需审核"时直接上架；否则默认 is_enable=False 等待后台审核
+
         if not settings.comment_need_review:
             comment.is_enable = True
         comment.author = author
 
-        # 楼中楼回复：隐藏域携带被回复评论 id，挂上自关联父评论
+        # DB 楼中楼回复：隐藏域携带被回复评论 id，挂上自关联父评论
+
         if form.cleaned_data['parent_comment_id']:
             parent_comment = Comment.objects.get(
                 pk=form.cleaned_data['parent_comment_id'])
             comment.parent_comment = parent_comment
 
         comment.save(True)
-        # PRG 模式：保存后重定向，避免刷新重复提交
+        # DB PRG 模式：保存后重定向，避免刷新重复提交
+
         return HttpResponseRedirect(
             "%s#div-comment-%d" %
             (article.get_absolute_url(), comment.pk))
@@ -120,10 +132,12 @@ class CommentReactionView(View):
 
     def get(self, request, comment_id):
         """获取评论的 reactions 数据（公开访问）"""
-        # 不存在或未启用评论一律 404，避免泄漏未审核内容
+        # DB 不存在或未启用评论一律 404，避免泄漏未审核内容
+
         comment = get_object_or_404(Comment, id=comment_id, is_enable=True)
 
-        # 传递用户信息，如果未登录则传递 None（has_reacted 全部为 False）
+        # DB 传递用户信息，如果未登录则传递 None（has_reacted 全部为 False）
+
         user = request.user if request.user.is_authenticated else None
         reactions_data = comment.get_reactions_summary(user)
 
@@ -133,27 +147,33 @@ class CommentReactionView(View):
         })
 
     def post(self, request, comment_id):
-        # POST 需要登录验证（未登录返回 401，由前端弹出登录引导）
+        # DB POST 需要登录验证（未登录返回 401，由前端弹出登录引导）
+
         if not request.user.is_authenticated:
             return JsonResponse({
                 'success': False,
                 'error': 'Authentication required'
             }, status=401)
-        # 获取评论（只有已启用的评论才能点赞）
+        # DB 获取评论（只有已启用的评论才能点赞）
+
         comment = get_object_or_404(Comment, id=comment_id, is_enable=True)
 
-        # 获取 reaction 类型
+        # DB 获取 reaction 类型
+
         reaction_type = request.POST.get('reaction_type')
 
-        # 验证 reaction_type 是否合法（白名单校验，拒绝任意字符串入库）
+        # DB 验证 reaction_type 是否合法（白名单校验，拒绝任意字符串入库）
+
         valid_reactions = [choice[0] for choice in CommentReaction.REACTION_CHOICES]
         if reaction_type not in valid_reactions:
             return JsonResponse({
                 'error': 'Invalid reaction type'
             }, status=400)
 
-        # 切换 reaction（toggle 语义：已存在则删除=取消，否则创建=点赞）
-        # unique_together(comment, user, reaction_type) 保证 get_or_create 唯一
+        # DB 切换 reaction（toggle 语义：已存在则删除=取消，否则创建=点赞）
+
+        # DB unique_together(comment, user, reaction_type) 保证 get_or_create 唯一
+
         reaction, created = CommentReaction.objects.get_or_create(
             comment=comment,
             user=request.user,
@@ -161,13 +181,15 @@ class CommentReactionView(View):
         )
 
         if not created:
-            # 已存在，删除它（取消点赞）
+            # DB 已存在，删除它（取消点赞）
+
             reaction.delete()
             action = 'removed'
         else:
             action = 'added'
 
-        # 返回该评论的所有 reactions 统计（含当前用户最新的 has_reacted 状态）
+        # DB 返回该评论的所有 reactions 统计（含当前用户最新的 has_reacted 状态）
+
         reactions_data = comment.get_reactions_summary(request.user)
 
         return JsonResponse({
