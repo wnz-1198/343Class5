@@ -1,14 +1,14 @@
-# DB ============================================================
+# ============================================================
 
-# DB comments/admin.py —— 评论后台管理配置
+# DB: comments/admin.py —— 评论后台管理配置
 
-# DB ============================================================
+# ============================================================
 
-# DB Comment        ：评论审核工作台（批量启用/禁用 = 评论审核流程）
+# DB: Comment        ：评论审核工作台（批量启用/禁用 = 评论审核流程）
 
-# DB CommentReaction：Emoji 反应记录（只读审计为主）
+# DB: CommentReaction：Emoji 反应记录（只读审计为主）
 
-# DB ============================================================
+# ============================================================
 
 from django.contrib import admin
 from django.urls import reverse
@@ -49,13 +49,13 @@ class CommentAdmin(admin.ModelAdmin):
         'creation_time')
     list_display_links = ('id', 'body', 'is_enable')
     list_filter = ('is_enable',)
-    # DB 时间字段不在表单编辑（由 default=now 自动维护）
+    # DB: 时间字段不在表单编辑（由 default=now 自动维护）
 
     exclude = ('creation_time', 'last_modify_time')
-    # DB 批量审核动作：通过/驳回
+    # DB: 批量审核动作：通过/驳回
 
     actions = [disable_commentstatus, enable_commentstatus]
-    # DB 外键以原始 id 输入框渲染，避免下拉列表全量加载
+    # DB: 外键以原始 id 输入框渲染，避免下拉列表全量加载
 
     raw_id_fields = ('author', 'article')
     search_fields = ('body',)
@@ -89,7 +89,7 @@ class CommentReactionAdmin(admin.ModelAdmin):
     list_display_links = ('id', 'reaction_type')
     list_filter = ('reaction_type', 'created_at')
     raw_id_fields = ('comment', 'user')
-    # DB 跨关联字段搜索：定位某条评论/某个用户的全部反应
+    # DB: 跨关联字段搜索：定位某条评论/某个用户的全部反应
 
     search_fields = ('comment__body', 'user__username')
     date_hierarchy = 'created_at'

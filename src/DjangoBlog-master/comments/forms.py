@@ -21,13 +21,13 @@ class CommentForm(ModelForm):
     作者(author)/文章(article)/is_enable 等均由视图与站点配置补全，
     不允许前端表单直接写入，防止越权伪造。
     """
-    # DB 楼中楼回复目标评论 id；普通顶级评论提交时为空
+    # DB: 楼中楼回复目标评论 id；普通顶级评论提交时为空
 
     parent_comment_id = forms.IntegerField(
         widget=forms.HiddenInput, required=False)
 
     class Meta:
         model = Comment
-        # DB 白名单：表单只接收正文字段，其余字段一律由服务端控制
+        # DB: 白名单：表单只接收正文字段，其余字段一律由服务端控制
 
         fields = ['body']
