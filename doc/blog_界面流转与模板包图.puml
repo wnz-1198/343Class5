@@ -1,0 +1,56 @@
+@startuml blog_interface_flow
+title Blog 核心页面流转
+left to right direction
+skinparam shadowing false
+skinparam rectangleBorderColor #355D8B
+skinparam rectangleBackgroundColor #F1F6FC
+rectangle "首页\n文章卡片和分页" as H
+rectangle "分类 / 标签列表\n按栏目筛选和分页" as L
+rectangle "文章详情\n正文、元信息和评论" as D
+rectangle "文章归档\n按年、月展开" as A
+H --> D : 点击文章标题
+H --> A : 顶部导航
+H --> L : 分类导航或卡片标签
+L --> D : 点击文章标题
+A --> D : 点击归档条目
+D --> L : 面包屑分类或文章标签
+D ..> H : 通过公共导航回首页
+@enduml
+@startuml blog_template_packages
+title Blog 页面模板继承和组件依赖
+left to right direction
+skinparam shadowing false
+skinparam packageBorderColor #355D8B
+skinparam packageBackgroundColor #F1F6FC
+package "templates/blog" {
+  artifact "article_index.html" as Index
+  artifact "article_detail.html" as Detail
+  artifact "article_archives.html" as Archive
+}
+package "templates/share_layout" {
+  artifact "base.html" as Base
+  artifact "nav.html" as Nav
+  artifact "footer.html" as Footer
+}
+package "blog/templatetags" {
+  artifact "blog_tags.py" as Tags
+}
+package "templates/blog/tags" {
+  artifact "article_info.html" as Card
+  artifact "sidebar.html" as Sidebar
+}
+package "templates/comments/tags" {
+  artifact "comment_list_modern.html\npost_comment_modern.html" as Comments
+}
+Index ..> Base : «extends»
+Detail ..> Base : «extends»
+Archive ..> Base : «extends»
+Base ..> Nav : «include»
+Base ..> Footer : «include»
+Index ..> Tags : 卡片、分页、侧栏
+Detail ..> Tags : 正文、元信息、侧栏
+Archive ..> Tags : 侧栏
+Tags ..> Card : «inclusion_tag»\nload_article_detail
+Tags ..> Sidebar : «inclusion_tag»\nload_sidebar
+Detail ..> Comments : «include»\n条件展示
+@enduml

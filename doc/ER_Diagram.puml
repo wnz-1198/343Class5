@@ -1,4 +1,4 @@
-@startuml DjangoBlog ER Diagram
+@startuml
 ' ===============================
 ' DjangoBlog 系统 E-R 图
 ' 软件工程大作业 - 第4-5周
@@ -84,8 +84,11 @@ entity "Tag\n(标签)" as Tag <<核心实体>> {
 }
 
 entity "Article_Tag\n(文章-标签 关联表)" as ArticleTag <<核心实体>> {
-    * article_id : Int <<FK,PK>>
-    * tag_id : Int <<FK,PK>>
+    * id : BigInt <<PK>>
+    * article_id : Int <<FK>>
+    * tag_id : Int <<FK>>
+    --
+    UNIQUE(article_id, tag_id)
 }
 
 entity "Comment\n(评论)" as Comment <<评论互动>> {
@@ -216,53 +219,33 @@ entity "EmailSendLog\n(邮件发送日志)" as EmailSendLog <<运维管理>> {
 
 ' ---- 用户与文章 (1:N) ----
 BlogUser ||--o{ Article : "撰写"
-Article }o--|| BlogUser : "作者"
 
 ' ---- 文章与分类 (N:1) ----
-Article }o--|| Category : "属于"
 Category ||--o{ Article : "包含"
 
 ' ---- 分类自关联 (树形) ----
-Category "0..1" ||--o{ Category : "父级"
+Category |o--o{ Category : "父级"
 
 ' ---- 文章与标签 (M:N) ----
-Article ||--o{ ArticleTag : ""
-Tag ||--o{ ArticleTag : ""
-ArticleTag }o--|| Article : "关联"
-ArticleTag }o--|| Tag : "关联"
-Article }o--o{ Tag : "多对多 标签"
+Article ||--o{ ArticleTag : "article_id"
+Tag ||--o{ ArticleTag : "tag_id"
 
 ' ---- 用户与评论 (1:N) ----
 BlogUser ||--o{ Comment : "发表"
-Comment }o--|| BlogUser : "评论者"
 
 ' ---- 文章与评论 (1:N) ----
 Article ||--o{ Comment : "拥有"
-Comment }o--|| Article : "所属文章"
 
 ' ---- 评论自关联 (树形) ----
-Comment "0..1" ||--o{ Comment : "父评论 回复"
+Comment |o--o{ Comment : "父评论 回复"
 
 ' ---- 评论与反应 (1:N) ----
 Comment ||--o{ CommentReaction : "拥有"
-CommentReaction }o--|| Comment : "所属评论"
 
 ' ---- 用户与反应 (1:N) ----
 BlogUser ||--o{ CommentReaction : "反应"
-CommentReaction }o--|| BlogUser : "用户"
 
 ' ---- 用户与第三方账户 (1:N) ----
-BlogUser "0..1" ||--o{ OAuthUser : "绑定"
-OAuthUser }o--o| BlogUser : "关联用户"
-
-' ---- 第三方配置独立 ----
-OAuthConfig
-
-' ---- 独立实体 ----
-Links
-SideBar
-BlogSettings
-commands
-EmailSendLog
+BlogUser |o--o{ OAuthUser : "绑定"
 
 @enduml

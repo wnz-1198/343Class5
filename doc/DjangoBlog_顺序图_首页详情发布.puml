@@ -28,8 +28,8 @@ database "Article / Comment ORM" as DB
 participant "插件钩子 / ViewCountPlugin" as P
 participant "article_detail.html" as T
 读者 -> V : GET /article/<年>/<月>/<日>/<id>.html
-V -> DB : 按 article_id 查 Article
-alt 文章不存在
+V -> DB : 按 article_id 查已发布 Article
+alt 文章不存在或仍为草稿
   DB --> V : 无记录
   V --> 读者 : 404
 else 找到文章

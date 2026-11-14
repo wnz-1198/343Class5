@@ -49,8 +49,11 @@ entity "Tag\n标签" as Tag {
 
 ' blog/models.py:164-166；blog/migrations/0001_initial.py:111-129
 entity "Article_Tag\nblog_article_tags（自动关联表）" as ArticleTag {
+  * id : BigAutoField <<PK>>
   * article_id : Int <<FK>>
   * tag_id : Int <<FK>>
+  --
+  UNIQUE(article_id, tag_id)
 }
 
 ' blog/models.py:378-430；blog/migrations/0001_initial.py:44-78
@@ -130,7 +133,7 @@ Comment |o--o{ Comment : parent_comment_id
 
 legend bottom
   * = 非空；PK = 主键；FK = 外键；UK = 唯一字段
-  图中的外键关系由 Django 级联删除。Article_Tag 只列关联外键。
+  图中的外键关系由 Django 级联删除。关联表使用独立主键和外键对唯一约束。
   Links、SideBar、BlogSettings 在本范围内无外键关系。
   BlogSettings 的单行限制由 clean() 校验。
 endlegend
