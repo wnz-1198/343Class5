@@ -1,3 +1,5 @@
+# WNZ: accounts.admin —— BlogUser 后台管理：创建表单（密码哈希落库）与用户列表展示、
+# WNZ: 搜索配置。
 from django import forms
 from django.contrib.auth.admin import UserAdmin
 from django.contrib.auth.forms import UserChangeForm

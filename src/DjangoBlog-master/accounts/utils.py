@@ -1,4 +1,7 @@
+# WNZ: accounts.utils —— 找回密码验证码的存取工具模块。
+# WNZ: 验证码以邮箱为键存入 Django 缓存，TTL 5 分钟；send_verify_email 负责发码邮件。
 import typing
+import secrets
 from datetime import timedelta
 
 from django.core.cache import cache
@@ -35,8 +38,12 @@ def verify(email: str, code: str) -> typing.Optional[str]:
         否测调用方也需要对error进行处理
     """
     cache_code = get_code(email)
-    if cache_code != code:
+    # WNZ: compare_digest 恒定时间比较，避免逐字符比对泄露时序信息。
+    if cache_code is None or not secrets.compare_digest(cache_code, code):
         return gettext("Verification code error")
+    # WNZ: 验证通过后立即作废验证码，防止 5 分钟窗口内重放同一验证码反复改密。
+    cache.delete(email)
+    return None
 
 
 def set_code(email: str, code: str):

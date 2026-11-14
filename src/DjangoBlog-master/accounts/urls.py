@@ -1,3 +1,5 @@
+# WNZ: accounts.urls —— 账号模块路由：登录/注册/登出/验证结果/找回密码/发验证码，
+# WNZ: 命名空间 app_name="accounts"，模板中以 'accounts:xxx' 反向解析。
 from django.urls import path
 from django.urls import re_path
 

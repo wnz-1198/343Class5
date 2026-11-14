@@ -1,3 +1,5 @@
+# WNZ: accounts.views —— 账号模块视图：注册（邮箱验证激活）、登录/登出（含记住我）、
+# WNZ: 邮箱验证结果页、找回密码（验证码 + 改密）。
 import logging
 from django.utils.translation import gettext_lazy as _
 from django.conf import settings
@@ -48,7 +50,8 @@ class RegisterView(SecureFormView):
             if settings.DEBUG:
                 site = '127.0.0.1:8000'
             path = reverse('account:result')
-            url = "http://{site}{path}?type=validation&id={id}&sign={sign}".format(
+            # WNZ: 验证链接改用 HTTPS，避免激活链接与签名在传输中被窃听篡改。
+            url = "https://{site}{path}?type=validation&id={id}&sign={sign}".format(
                 site=site, path=path, id=user.id, sign=sign)
 
             content = """
@@ -203,7 +206,12 @@ class ForgetPasswordView(SecureFormView):
 
     def form_valid(self, form):
         if form.is_valid():
-            blog_user = BlogUser.objects.filter(email=form.cleaned_data.get("email")).get()
+            # WNZ: email 字段在库中无唯一约束，OAuth 绑定等场景可能出现同邮箱多账号，
+            # WNZ: 用 .get() 会抛 MultipleObjectsReturned 导致 500，改为 .first()。
+            blog_user = BlogUser.objects.filter(
+                email=form.cleaned_data.get("email")).first()
+            if blog_user is None:
+                return self.render_to_response({'form': form})
             blog_user.password = make_password(form.cleaned_data["new_password2"])
             blog_user.save()
             return HttpResponseRedirect('/login/')
@@ -218,6 +226,11 @@ class ForgetPasswordEmailCode(View):
         if not form.is_valid():
             return HttpResponse("错误的邮箱")
         to_email = form.cleaned_data["email"]
+
+        # WNZ: 只给已注册邮箱发码；未注册邮箱返回同样的 "ok"，
+        # WNZ: 既避免验证码邮件被滥发骚扰任意地址，也不暴露邮箱是否注册过。
+        if not BlogUser.objects.filter(email=to_email).exists():
+            return HttpResponse("ok")
 
         code = generate_code()
         utils.send_verify_email(to_email, code)

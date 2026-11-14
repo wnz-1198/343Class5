@@ -1,3 +1,5 @@
+# WNZ: accounts.forms —— 账号模块表单：登录/注册样式包装、找回密码（新密码+邮箱+验证码）
+# WNZ: 及其校验逻辑（邮箱存在性、两次密码一致、验证码有效性）。
 from django import forms
 from django.contrib.auth import get_user_model, password_validation
 from django.contrib.auth.forms import AuthenticationForm, UserCreationForm

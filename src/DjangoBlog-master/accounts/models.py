@@ -1,3 +1,5 @@
+# WNZ: accounts.models —— 站点用户模型：BlogUser 继承 AbstractUser，
+# WNZ: 扩展昵称、创建/修改时间与注册来源字段，供博客作者页与评论署名使用。
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 from django.urls import reverse
@@ -72,7 +74,8 @@ class BlogUser(AbstractUser):
         对象字符串表示：使用邮箱，方便后台 / 日志定位
         (不使用 username 是因为邮箱在 OAuth 场景下更具备可识别性)
         """
-        return self.email
+        # WNZ: email 可为空串，兜底返回 username，避免后台/日志出现空字符串。
+        return self.email or self.username
 
     def get_full_url(self):
         """
