@@ -1,4 +1,4 @@
-# XLT: blog 模块的数据模型定义
+# XLT: blog 数据模型精读标注（徐力艇）；浏览量并发更新见 Article.viewed()。
 # ---------------------------------------------------------------------------
 # XLT: 本文件包含 7 个模型类与 1 个 TextChoices 枚举，共 8 个类定义：
 # XLT: LinkShowType —— 友情链接展示位置枚举（TextChoices，不是模型，不建表）
@@ -220,7 +220,6 @@ class Article(BaseModel):
 
     # XLT: 数据库以当前值原子递增，避免并发访问用旧值互相覆盖。
     def viewed(self):
-        # SJL: 使用数据库原子自增，避免多个请求同时读取旧值造成浏览量丢失。
         if self.pk is None:
             return
         updated = Article.objects.filter(pk=self.pk).update(views=F('views') + 1)

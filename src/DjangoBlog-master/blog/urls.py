@@ -1,6 +1,6 @@
-# XLT: blog 应用的 URL 路由表
+# XLT: blog URL 路由精读标注（徐力艇）
 # ---------------------------------------------------------------------------
-# XLT: 本文件把前台 URL 映射到 blog/views.py 中的视图，共 13 条路由。
+# XLT: 本文件把前台 URL 映射到 blog/views.py，共 14 条，含 Markdown 导出入口。
 # XLT: app_name = "blog" 定义了命名空间，因此模板/视图里反向解析必须写 'blog:xxx'
 # XLT: （例如 {% url 'blog:index' %}、reverse('blog:detailbyid', ...)）。
 #
@@ -41,7 +41,6 @@ urlpatterns = [
         r'article/<int:year>/<int:month>/<int:day>/<int:article_id>.html',
         views.ArticleDetailView.as_view(),
         name='detailbyid'),
-    # SJL: 文章导出：/article/年/月/日/<文章id>/export.md → ArticleExportView
     path(
         r'article/<int:year>/<int:month>/<int:day>/<int:article_id>/export.md',
         views.ArticleExportView.as_view(),

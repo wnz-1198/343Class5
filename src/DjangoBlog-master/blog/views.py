@@ -1,4 +1,4 @@
-# XLT: blog 应用的前台视图
+# XLT: blog 前台视图精读标注（徐力艇）
 # ---------------------------------------------------------------------------
 # XLT: 组织方式：以类视图（CBV）为主线，其中列表类视图通过 Mixin 组合复用逻辑。
 # XLT: 相关 Mixin 的定义都在 djangoblog/mixins.py：
@@ -16,10 +16,11 @@
 # XLT: ArticleDetailView（DetailView）、LinkListView（ListView）、EsSearchView（SearchView）
 # XLT: 完全没有使用上述任何 Mixin。
 #
-# XLT: 视图清单（9 个 CBV + 2 个 FBV）：
+# XLT: 视图清单（10 个 CBV + 2 个 FBV）：
 # XLT: ArticleListView    —— 列表类视图基类，其余列表页都继承它
 # XLT: IndexView          —— 首页（含分页）
 # XLT: ArticleDetailView  —— 文章详情（含评论分页与 SEO）
+# ArticleExportView —— 文章 Markdown 导出
 # XLT: CategoryDetailView —— 分类归档
 # XLT: AuthorDetailView   —— 作者归档
 # XLT: TagDetailView      —— 标签归档
@@ -289,7 +290,6 @@ class ArticleExportView(DetailView):
     pk_url_kwarg = 'article_id'
 
     def get_queryset(self):
-        #SJL: 草稿只有作者或超级管理员可导出，公开文章允许匿名下载。
         queryset = Article.objects.select_related(
             'author', 'category'
         ).prefetch_related('tags')
